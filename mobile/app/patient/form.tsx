@@ -1,6 +1,30 @@
 import { Text, View, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../firebaseConfig';
+import { useState, useEffect } from "react";
 
 export default function PatientFormScreen() {
+  const [doctors, setDoctors] = useState<Array<{ id: string; [key: string]: any }>>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
+  const [showDoctors, setShowDoctors] = useState(false);
+
+  const fetchDoctors = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'doctors'));
+      const doctorsList: Array<{ id: string; [key: string]: any }> = [];
+      querySnapshot.forEach((doc) => {
+        doctorsList.push({ id: doc.id, ...doc.data() });
+      });
+      setDoctors(doctorsList);
+    } catch (error) {
+      console.error('Error fetching doctors: ', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+  
   return (
     <ScrollView style={styles.container}>
       <View style={styles.form}>
@@ -42,7 +66,36 @@ export default function PatientFormScreen() {
             keyboardType="phone-pad"
           />
         </View>
-        
+
+        {/* Doctor Selection */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Select Doctor</Text>
+          <TouchableOpacity 
+            style={styles.input}
+            onPress={() => setShowDoctors(!showDoctors)}
+          >
+            <Text>{selectedDoctor ? selectedDoctor.name : "Choose a doctor"}</Text>
+          </TouchableOpacity>
+          
+          {showDoctors && (
+            <View>
+              {doctors.map((doctor) => (
+                <TouchableOpacity 
+                  key={doctor.id}
+                  onPress={() => {
+                    setSelectedDoctor(doctor);
+                    setShowDoctors(false);
+                  }}
+                >
+                  <Text style={{ padding: 10, backgroundColor: '#f0f0f0', margin: 2 }}>
+                    {doctor.first_name + " " + doctor.last_name} - {doctor.specialization}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
         {/* Note */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Note</Text>
