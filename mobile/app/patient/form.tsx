@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 
 export default function PatientFormScreen() {
   const [doctors, setDoctors] = useState<Array<{ id: string; [key: string]: any }>>([]);
+  const [sessions, setSessions] = useState<Array<{ id: string; [key: string]: any }>>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [showDoctors, setShowDoctors] = useState(false);
 
@@ -21,8 +22,22 @@ export default function PatientFormScreen() {
     }
   };
 
+  const fetchAvailableSessions = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'sessions'));
+      const sessionsList: Array<{ id: string; [key: string]: any }> = [];
+      querySnapshot.forEach((doc) => {
+        sessionsList.push({ id: doc.id, ...doc.data() });
+      });
+      setSessions(sessionsList);
+    } catch (error) {
+      console.error('Error fetching available sessions: ', error);
+    }
+  };
+
   useEffect(() => {
     fetchDoctors();
+    fetchAvailableSessions();
   }, []);
   
   return (
