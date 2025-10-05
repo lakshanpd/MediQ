@@ -47,17 +47,49 @@ export default function PatientFormScreen() {
     }
   };
 
+  const isSessionWithin12Hours = (session: any) => {
+    const now = new Date();
+    const sessionStartTime = new Date(session.start_time);
+    const twelveHoursFromNow = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+    
+    // Check if session is in the future and within 12 hours
+    return sessionStartTime >= now && sessionStartTime <= twelveHoursFromNow;
+  };
+
   const getAvailableSessionsForDoctor = () => {
     if (!selectedDoctor) return [];
     return sessions.filter(
-      (session) => session.doctor_id === selectedDoctor.id
+      (session) => 
+        session.doctor_id === selectedDoctor.id && 
+        isSessionWithin12Hours(session)
     );
   };
 
   const formatSessionTime = (session: any) => {
-    const startTime = new Date(session.start_time).toLocaleString();
-    const endTime = new Date(session.end_time).toLocaleString();
-    return `${startTime} - ${endTime}`;
+    const startTime = new Date(session.start_time);
+    const endTime = new Date(session.end_time);
+    const now = new Date();
+    
+    // Check if it's today or tomorrow
+    const isToday = startTime.toDateString() === now.toDateString();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow = startTime.toDateString() === tomorrow.toDateString();
+    
+    // Format time in 12-hour format
+    const formatTime = (date: Date) => {
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    };
+    
+    const dayLabel = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : startTime.toLocaleDateString();
+    const startTimeFormatted = formatTime(startTime);
+    const endTimeFormatted = formatTime(endTime);
+    
+    return `${dayLabel}, ${startTimeFormatted} – ${endTimeFormatted}`;
   };
 
   useEffect(() => {
