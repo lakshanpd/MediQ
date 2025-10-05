@@ -6,9 +6,10 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useState, useEffect } from "react";
+import { getExpoPushToken } from "@/utils/getExpoPushToken";
 
 export default function PatientFormScreen() {
   const [doctors, setDoctors] = useState<
@@ -21,6 +22,12 @@ export default function PatientFormScreen() {
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [showDoctors, setShowDoctors] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
+  const [note, setNote] = useState("");
+
   const fetchDoctors = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "doctors"));
@@ -51,7 +58,7 @@ export default function PatientFormScreen() {
     const now = new Date();
     const sessionStartTime = new Date(session.start_time);
     const twelveHoursFromNow = new Date(now.getTime() + 12 * 60 * 60 * 1000);
-    
+
     // Check if session is in the future and within 12 hours
     return sessionStartTime >= now && sessionStartTime <= twelveHoursFromNow;
   };
@@ -59,8 +66,8 @@ export default function PatientFormScreen() {
   const getAvailableSessionsForDoctor = () => {
     if (!selectedDoctor) return [];
     return sessions.filter(
-      (session) => 
-        session.doctor_id === selectedDoctor.id && 
+      (session) =>
+        session.doctor_id === selectedDoctor.id &&
         isSessionWithin12Hours(session)
     );
   };
@@ -69,27 +76,75 @@ export default function PatientFormScreen() {
     const startTime = new Date(session.start_time);
     const endTime = new Date(session.end_time);
     const now = new Date();
-    
+
     // Check if it's today or tomorrow
     const isToday = startTime.toDateString() === now.toDateString();
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const isTomorrow = startTime.toDateString() === tomorrow.toDateString();
-    
+
     // Format time in 12-hour format
     const formatTime = (date: Date) => {
-      return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
       });
     };
-    
-    const dayLabel = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : startTime.toLocaleDateString();
+
+    const dayLabel = isToday
+      ? "Today"
+      : isTomorrow
+      ? "Tomorrow"
+      : startTime.toLocaleDateString();
     const startTimeFormatted = formatTime(startTime);
     const endTimeFormatted = formatTime(endTime);
-    
+
     return `${dayLabel}, ${startTimeFormatted} – ${endTimeFormatted}`;
+  };
+
+  const handleSubmit = async () => {
+    try {
+      // Validate required fields
+      if (!firstName || !lastName || !selectedDoctor || !selectedSession) {
+        alert("Please fill in all required fields");
+        return;
+      }
+
+
+      // Create patient data object
+      const patientData = {
+        patient: {
+          name: firstName + " " + lastName,
+          birthday,
+          contact_number: contactNumber,
+          illness_note: note,
+        },
+        sessionId: selectedSession.id,
+        status: "pending",
+        device_token: await getExpoPushToken(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Add document to 'tokens' collection
+      const docRef = await addDoc(collection(db, "tokens"), patientData);
+      console.log("Document written with ID: ", docRef.id);
+
+      // Reset form after successful submission
+      setFirstName("");
+      setLastName("");
+      setBirthday("");
+      setContactNumber("");
+      setNote("");
+      setSelectedDoctor(null);
+      setSelectedSession(null);
+
+      alert("Registration submitted successfully!");
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      alert("Error submitting registration. Please try again.");
+    }
   };
 
   useEffect(() => {
@@ -105,19 +160,34 @@ export default function PatientFormScreen() {
         {/* First Name */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>First Name</Text>
-          <TextInput style={styles.input} placeholder="Enter your first name" />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your first name"
+            value={firstName}
+            onChangeText={setFirstName}
+          />
         </View>
 
         {/* Last Name */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Last Name</Text>
-          <TextInput style={styles.input} placeholder="Enter your last name" />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your last name"
+            value={lastName}
+            onChangeText={setLastName}
+          />
         </View>
 
         {/* Birthday */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Birthday</Text>
-          <TextInput style={styles.input} placeholder="MM/DD/YYYY" />
+          <TextInput
+            style={styles.input}
+            placeholder="YYYY-MM-DD"
+            value={birthday}
+            onChangeText={setBirthday}
+          />
         </View>
 
         {/* Contact Number */}
@@ -127,6 +197,8 @@ export default function PatientFormScreen() {
             style={styles.input}
             placeholder="Enter your phone number"
             keyboardType="phone-pad"
+            value={contactNumber}
+            onChangeText={setContactNumber}
           />
         </View>
 
@@ -220,11 +292,13 @@ export default function PatientFormScreen() {
             multiline={true}
             numberOfLines={4}
             textAlignVertical="top"
+            value={note}
+            onChangeText={setNote}
           />
         </View>
 
         {/* Submit Button */}
-        <TouchableOpacity style={styles.submitButton}>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Submit</Text>
         </TouchableOpacity>
       </View>
