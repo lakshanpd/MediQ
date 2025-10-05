@@ -1,77 +1,93 @@
-import { Text, View, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
+import {
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
 import { useState, useEffect } from "react";
 
 export default function PatientFormScreen() {
-  const [doctors, setDoctors] = useState<Array<{ id: string; [key: string]: any }>>([]);
-  const [sessions, setSessions] = useState<Array<{ id: string; [key: string]: any }>>([]);
+  const [doctors, setDoctors] = useState<
+    Array<{ id: string; [key: string]: any }>
+  >([]);
+  const [sessions, setSessions] = useState<
+    Array<{ id: string; [key: string]: any }>
+  >([]);
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
   const [showDoctors, setShowDoctors] = useState(false);
-
+  const [showSessions, setShowSessions] = useState(false);
   const fetchDoctors = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'doctors'));
+      const querySnapshot = await getDocs(collection(db, "doctors"));
       const doctorsList: Array<{ id: string; [key: string]: any }> = [];
       querySnapshot.forEach((doc) => {
         doctorsList.push({ id: doc.id, ...doc.data() });
       });
       setDoctors(doctorsList);
     } catch (error) {
-      console.error('Error fetching doctors: ', error);
+      console.error("Error fetching doctors: ", error);
     }
   };
 
   const fetchAvailableSessions = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'sessions'));
+      const querySnapshot = await getDocs(collection(db, "sessions"));
       const sessionsList: Array<{ id: string; [key: string]: any }> = [];
       querySnapshot.forEach((doc) => {
         sessionsList.push({ id: doc.id, ...doc.data() });
       });
       setSessions(sessionsList);
     } catch (error) {
-      console.error('Error fetching available sessions: ', error);
+      console.error("Error fetching available sessions: ", error);
     }
+  };
+
+  const getAvailableSessionsForDoctor = () => {
+    if (!selectedDoctor) return [];
+    return sessions.filter(
+      (session) => session.doctor_id === selectedDoctor.id
+    );
+  };
+
+  const formatSessionTime = (session: any) => {
+    const startTime = new Date(session.start_time).toLocaleString();
+    const endTime = new Date(session.end_time).toLocaleString();
+    return `${startTime} - ${endTime}`;
   };
 
   useEffect(() => {
     fetchDoctors();
     fetchAvailableSessions();
   }, []);
-  
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.form}>
         <Text style={styles.title}>Patient Registration Form</Text>
-        
+
         {/* First Name */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>First Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your first name"
-          />
+          <TextInput style={styles.input} placeholder="Enter your first name" />
         </View>
-        
+
         {/* Last Name */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Last Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your last name"
-          />
+          <TextInput style={styles.input} placeholder="Enter your last name" />
         </View>
-        
+
         {/* Birthday */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Birthday</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="MM/DD/YYYY"
-          />
+          <TextInput style={styles.input} placeholder="MM/DD/YYYY" />
         </View>
-        
+
         {/* Contact Number */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Contact Number</Text>
@@ -85,25 +101,37 @@ export default function PatientFormScreen() {
         {/* Doctor Selection */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Select Doctor</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.input}
             onPress={() => setShowDoctors(!showDoctors)}
           >
-            <Text>{selectedDoctor ? selectedDoctor.name : "Choose a doctor"}</Text>
+            <Text>
+              {selectedDoctor
+                ? selectedDoctor.first_name + " " + selectedDoctor.last_name
+                : "Choose a doctor"}
+            </Text>
           </TouchableOpacity>
-          
+
           {showDoctors && (
             <View>
               {doctors.map((doctor) => (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={doctor.id}
                   onPress={() => {
                     setSelectedDoctor(doctor);
+                    setSelectedSession(null); // Reset session when doctor changes
                     setShowDoctors(false);
                   }}
                 >
-                  <Text style={{ padding: 10, backgroundColor: '#f0f0f0', margin: 2 }}>
-                    {doctor.first_name + " " + doctor.last_name} - {doctor.specialization}
+                  <Text
+                    style={{
+                      padding: 10,
+                      backgroundColor: "#f0f0f0",
+                      margin: 2,
+                    }}
+                  >
+                    {doctor.first_name + " " + doctor.last_name} -{" "}
+                    {doctor.specialization}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -111,6 +139,46 @@ export default function PatientFormScreen() {
           )}
         </View>
 
+        {/* Session Selection - Only show if doctor is selected */}
+        {selectedDoctor && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Select Available Time</Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowSessions(!showSessions)}
+            >
+              <Text>
+                {selectedSession
+                  ? formatSessionTime(selectedSession)
+                  : "Choose available time"}
+              </Text>
+            </TouchableOpacity>
+
+            {showSessions && (
+              <View>
+                {getAvailableSessionsForDoctor().map((session) => (
+                  <TouchableOpacity
+                    key={session.id}
+                    onPress={() => {
+                      setSelectedSession(session);
+                      setShowSessions(false);
+                    }}
+                  >
+                    <Text
+                      style={{
+                        padding: 10,
+                        backgroundColor: "#e8f4fd",
+                        margin: 2,
+                      }}
+                    >
+                      {formatSessionTime(session)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
         {/* Note */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Note</Text>
@@ -122,7 +190,7 @@ export default function PatientFormScreen() {
             textAlignVertical="top"
           />
         </View>
-        
+
         {/* Submit Button */}
         <TouchableOpacity style={styles.submitButton}>
           <Text style={styles.submitButtonText}>Submit</Text>
@@ -135,48 +203,48 @@ export default function PatientFormScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   form: {
     padding: 20,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 30,
-    color: '#333',
+    color: "#333",
   },
   inputGroup: {
     marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
-    color: '#333',
+    color: "#333",
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   noteInput: {
     height: 100,
   },
   submitButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     padding: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   },
   submitButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
