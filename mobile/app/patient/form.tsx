@@ -11,6 +11,7 @@ import { db } from "../../firebaseConfig";
 import { useState, useEffect } from "react";
 import { getExpoPushToken } from "@/utils/getExpoPushToken";
 import { getDeviceID } from "@/utils/deviceID";
+import { PatientFormData } from "@/types";
 
 export default function PatientFormScreen() {
   const [doctors, setDoctors] = useState<
@@ -114,7 +115,7 @@ export default function PatientFormScreen() {
 
 
       // Create patient data object
-      const patientData = {
+      const patientData: PatientFormData = {
         patient: {
           name: firstName + " " + lastName,
           birthday,
@@ -123,10 +124,10 @@ export default function PatientFormScreen() {
         },
         sessionId: selectedSession.id,
         status: "pending",
-        device_token: await getExpoPushToken(),
+        device_token: await getExpoPushToken() || "",
         device_id: await getDeviceID(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       };
 
       // Add document to 'tokens' collection
