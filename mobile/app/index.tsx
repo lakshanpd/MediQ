@@ -2,6 +2,7 @@ import { View, Text, Button } from "react-native";
 import { useRouter } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
+import { getExpoPushToken } from "@/utils/getExpoPushToken";
 
 export default function WelcomeScreen() {
   const router = useRouter();

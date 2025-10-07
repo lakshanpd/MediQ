@@ -10,8 +10,8 @@ import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useState, useEffect } from "react";
 import { getExpoPushToken } from "@/utils/getExpoPushToken";
-import { getDeviceID } from "@/utils/deviceID";
 import { PatientFormData } from "@/types";
+import { useUser } from "@/contexts/userContext";
 
 export default function PatientFormScreen() {
   const [doctors, setDoctors] = useState<
@@ -29,6 +29,7 @@ export default function PatientFormScreen() {
   const [birthday, setBirthday] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [note, setNote] = useState("");
+  const { userState } = useUser();
 
   const fetchDoctors = async () => {
     try {
@@ -125,7 +126,7 @@ export default function PatientFormScreen() {
         sessionId: selectedSession.id,
         status: "pending",
         device_token: await getExpoPushToken() || "",
-        device_id: await getDeviceID(),
+        device_id: userState.deviceId || "",
         created_at: new Date(),
         updated_at: new Date(),
       };
