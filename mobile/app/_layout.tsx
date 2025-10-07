@@ -1,6 +1,6 @@
 import { Stack, usePathname, useRouter } from "expo-router";
 import { UserProvider, useUser } from "@/contexts/userContext";
-import { use, useEffect } from "react";
+import { useEffect } from "react";
 
 function UserRedirect() {
   const { userState } = useUser();
@@ -8,11 +8,14 @@ function UserRedirect() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!userState || !userState.role) return;
     const goTo = (target: string) => {
-      if (pathname !== target) router.push(target as any);
+      if (pathname !== target) router.replace(target as any);
     };
     const timeout = setTimeout(() => {
+      if (!userState || !userState.role) {
+        goTo("/");
+        return;
+      }
       switch (userState.role) {
         case "patient":
           switch (userState.patientStatus) {
@@ -21,6 +24,12 @@ function UserRedirect() {
               break;
             case "pending":
               goTo("/patient/status/pending");
+              break;
+            case "accepted":
+              goTo("/patient/status/accepted");
+              break;
+            case "rejected":
+              goTo("/patient/status/rejected");
               break;
             default:
               goTo("/");
