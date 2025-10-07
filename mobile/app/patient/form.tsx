@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { getExpoPushToken } from "@/utils/getExpoPushToken";
 import { PatientFormData } from "@/types";
 import { useUser } from "@/contexts/userContext";
@@ -29,7 +29,7 @@ export default function PatientFormScreen() {
   const [birthday, setBirthday] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [note, setNote] = useState("");
-  const { userState } = useUser();
+  const { userState, setUserData, setPatientStatus } = useUser();
 
   const fetchDoctors = async () => {
     try {
@@ -133,7 +133,8 @@ export default function PatientFormScreen() {
 
       // Add document to 'tokens' collection
       const docRef = await addDoc(collection(db, "tokens"), patientData);
-      console.log("Document written with ID: ", docRef.id);
+      setUserData({tokenId: docRef.id});
+      setPatientStatus("pending");
 
       // Reset form after successful submission
       setFirstName("");
