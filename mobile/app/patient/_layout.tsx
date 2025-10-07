@@ -1,49 +1,16 @@
-import { useUser } from "@/contexts/userContext";
-import { router, Stack, usePathname, useRouter } from "expo-router";
-import { use, useEffect } from "react";
+import { Stack, useRouter } from "expo-router";
 import { TouchableOpacity, Text } from "react-native";
 
 function BackButton() {
   const router = useRouter();
   return (
-    <TouchableOpacity onPress={() => router.back()}>
+    <TouchableOpacity onPress={() => router.replace("/")}>
       <Text style={{ color: "#007AFF", marginLeft: 15 }}>← Back</Text>
     </TouchableOpacity>
   );
 }
 
 export default function PatientLayout() {
-  const { userState } = useUser();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    // wait until userState is available
-    if (!userState) return;
-
-    // determine target route for the current patient status
-    const target = (() => {
-      switch (userState.patientStatus) {
-        case "pending":
-          return "/patient/status/pending";
-        case "accepted":
-          return "/patient/status/accepted";
-        case "rejected":
-          return "/patient/status/rejected";
-        case "form":
-        default:
-          return "/patient/form";
-      }
-    })();
-
-    // avoid navigating if already on the target route
-    if (!pathname || pathname.startsWith(target)) return;
-
-    // use replace to avoid stacking history and schedule on next tick
-    const t = setTimeout(() => router.replace(target), 0);
-    return () => clearTimeout(t);
-  }, [userState, pathname, router]);
-
   return (
     <Stack>
       <Stack.Screen
