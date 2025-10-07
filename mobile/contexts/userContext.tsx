@@ -155,15 +155,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Reset user (logout)
   const resetUser = async () => {
     try {
-      await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
-      setUserState({
+      // Clear all storage except device ID
+      const keysToRemove = Object.values(STORAGE_KEYS).filter(
+        (k) => k !== STORAGE_KEYS.DEVICE_ID
+      );
+      await AsyncStorage.multiRemove(keysToRemove);
+
+      // Preserve deviceId in memory
+      setUserState((prev) => ({
         ...initialState,
-      });
+        deviceId: prev.deviceId ?? null,
+      }));
     } catch (error) {
       console.error("❌ Error resetting user:", error);
     }
   };
-
   // Get current route based on user state
   const getCurrentRoute = (): string => {
     if (!userState.role) {
