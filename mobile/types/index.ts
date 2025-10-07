@@ -1,19 +1,25 @@
 export interface Patient {
-    name: string;
-    birthday: string;
-    contact_number: string;
-    illness_note: string;
+  name: string;
+  birthday: string;
+  contact_number: string;
+  illness_note: string;
 }
 
 export interface PatientFormData {
   patient: Patient;
   sessionId: string;
-  status: "pending" | "accepted" | "rejected" | "serving" | "served" | "skipped";
+  status:
+    | "pending"
+    | "accepted"
+    | "rejected"
+    | "serving"
+    | "served"
+    | "skipped";
   device_token: string;
   device_id: string;
   created_at: Date;
   updated_at: Date;
-};
+}
 
 export interface Doctor {
   doctorId: string;
@@ -26,10 +32,48 @@ export interface Doctor {
 
 export interface Session {
   sessionId: string;
-  doctor_id: string; 
+  doctor_id: string;
   start_time: Date; // UTC timestamp
   end_time: Date; // UTC timestamp
   status: "scheduled" | "active" | "ended" | "cancelled";
   created_at: Date;
   updated_at: Date;
+}
+
+export type UserRole = "patient" | "doctor";
+
+export type PatientStatus = "form" | "pending" | "accepted" | "rejected";
+
+export type DoctorStatus =
+  | "inactive"
+  | "active"
+  | "in_session"
+  | "break"
+  | "offline";
+
+export interface UserState {
+  role: UserRole | null;
+  patientStatus: PatientStatus | null;
+  doctorStatus: DoctorStatus | null;
+  userId: string | null;
+  deviceToken: string | null;
+}
+
+// context types
+export interface UserContextType {
+  // State
+  userState: UserState;
+
+  // Actions
+  setUserRole: (role: UserRole) => Promise<void>;
+  setPatientStatus: (status: PatientStatus) => Promise<void>;
+  setDoctorStatus: (status: DoctorStatus) => Promise<void>;
+  setUserId: (id: string) => Promise<void>;
+  setDeviceToken: (token: string) => Promise<void>;
+  resetUser: () => Promise<void>;
+
+  // Computed values
+  isPatient: boolean;
+  isDoctor: boolean;
+  getCurrentRoute: () => string;
 }
