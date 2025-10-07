@@ -20,18 +20,8 @@ export default function PatientRejectedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 20,
-    textAlign: "center",
-  },
+  container: { flex: 1, padding: 20, justifyContent: "center", backgroundColor: "#fff" },
+  title: { fontSize: 18, fontWeight: "600", marginBottom: 20, textAlign: "center" },
   rejectedButton: {
     backgroundColor: "#ff3b30",
     paddingVertical: 12,

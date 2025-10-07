@@ -52,6 +52,11 @@ export default function PatientPendingScreen() {
     return null;
   }
 
+  if (tokenData.status === "rejected") {
+    setPatientStatus && setPatientStatus("rejected");
+    return null;
+  }
+
   if (tokenData.status === "pending") {
     return (
       <View style={styles.container}>
