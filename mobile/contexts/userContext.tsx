@@ -13,6 +13,7 @@ import {
   UserRole,
   UserState,
 } from "@/types";
+import { generateUniqueId } from "@/utils/generateDeviceId";
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -42,9 +43,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Load user data from storage on app start
   const loadUserFromStorage = async () => {
     try {
-      console.log("🔄 Loading user data from storage...");
 
-      const [
+      let [
         storedRole,
         storedPatientStatus,
         storedDoctorStatus,
@@ -58,6 +58,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
         AsyncStorage.getItem(STORAGE_KEYS.DEVICE_ID),
       ]);
 
+      if (!storedDeviceId) {
+        storedDeviceId = generateUniqueId();
+      }
+
       setUserState({
         role: storedRole as UserRole | null,
         patientStatus: storedPatientStatus as PatientStatus | null,
@@ -66,11 +70,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
         deviceId: storedDeviceId,
       });
 
-      console.log("✅ User data loaded:", {
-        role: storedRole,
-        patientStatus: storedPatientStatus,
-        doctorStatus: storedDoctorStatus,
-      });
     } catch (error) {
       console.error("❌ Error loading user data:", error);
       setUserState((prev) => ({ ...prev, isLoading: false }));

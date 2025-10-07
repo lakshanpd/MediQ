@@ -56,7 +56,7 @@ export interface UserState {
   patientStatus: PatientStatus | null;
   doctorStatus: DoctorStatus | null;
   userId: string | null;
-  deviceToken: string | null;
+  deviceId: string | null;
 }
 
 // context types
@@ -69,9 +69,9 @@ export interface UserContextType {
   setPatientStatus: (status: PatientStatus) => Promise<void>;
   setDoctorStatus: (status: DoctorStatus) => Promise<void>;
   setUserId: (id: string) => Promise<void>;
-  setDeviceToken: (token: string) => Promise<void>;
+  setDeviceId: (token: string) => Promise<void>;
   resetUser: () => Promise<void>;
-
+    
   // Computed values
   isPatient: boolean;
   isDoctor: boolean;
