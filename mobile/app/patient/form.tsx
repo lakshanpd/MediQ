@@ -10,6 +10,7 @@ import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useState, useEffect } from "react";
 import { getExpoPushToken } from "@/utils/getExpoPushToken";
+import { getDeviceID } from "@/utils/deviceID";
 
 export default function PatientFormScreen() {
   const [doctors, setDoctors] = useState<
@@ -123,6 +124,7 @@ export default function PatientFormScreen() {
         sessionId: selectedSession.id,
         status: "pending",
         device_token: await getExpoPushToken(),
+        device_id: await getDeviceID(),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
