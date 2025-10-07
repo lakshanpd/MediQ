@@ -22,6 +22,7 @@ const STORAGE_KEYS = {
   DOCTOR_STATUS: "mediq_doctor_status",
   USER_ID: "mediq_user_id",
   DEVICE_ID: "mediq_device_id",
+  USER_DATA: "mediq_user_data",
 };
 
 // Create context
@@ -34,6 +35,7 @@ const initialState: UserState = {
   doctorStatus: null,
   userId: null,
   deviceId: null,
+  userData: null,
 };
 
 // Provider component
@@ -43,19 +45,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Load user data from storage on app start
   const loadUserFromStorage = async () => {
     try {
-
       let [
         storedRole,
         storedPatientStatus,
         storedDoctorStatus,
         storedUserId,
         storedDeviceId,
+        storedUserData,
       ] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.USER_ROLE),
         AsyncStorage.getItem(STORAGE_KEYS.PATIENT_STATUS),
         AsyncStorage.getItem(STORAGE_KEYS.DOCTOR_STATUS),
         AsyncStorage.getItem(STORAGE_KEYS.USER_ID),
         AsyncStorage.getItem(STORAGE_KEYS.DEVICE_ID),
+        AsyncStorage.getItem(STORAGE_KEYS.USER_DATA),
       ]);
 
       if (!storedDeviceId) {
@@ -68,8 +71,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         doctorStatus: storedDoctorStatus as DoctorStatus | null,
         userId: storedUserId,
         deviceId: storedDeviceId,
+        userData: storedUserData ? JSON.parse(storedUserData) : null,
       });
-
     } catch (error) {
       console.error("❌ Error loading user data:", error);
       setUserState((prev) => ({ ...prev, isLoading: false }));
@@ -139,6 +142,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Set user data
+  const setUserData = (data: any) => {
+    try {
+      AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(data));
+      setUserState((prev) => ({ ...prev, userData: data }));
+    } catch (error) {
+      console.error("❌ Error setting user data:", error);
+    }
+  };
+
   // Reset user (logout)
   const resetUser = async () => {
     try {
@@ -196,6 +209,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setDoctorStatus,
     setUserId,
     setDeviceId,
+    setUserData,
     resetUser,
     isPatient,
     isDoctor,
