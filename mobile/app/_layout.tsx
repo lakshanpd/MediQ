@@ -15,13 +15,20 @@ function UserRedirect() {
     const timeout = setTimeout(() => {
       switch (userState.role) {
         case "patient":
-          goTo("/patient");
-          break;
+          switch (userState.patientStatus) {
+            case "form":
+              goTo("/patient/form");
+              break;
+            case "pending":
+              goTo("/patient/status/pending");
+              break;
+            default:
+              goTo("/");
+              break;
+          }
         case "doctor":
-          goTo("/");
           break;
         default:
-          goTo("/");
           break;
       }
     }, 0);

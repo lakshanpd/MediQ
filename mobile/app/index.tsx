@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { useUser } from "@/contexts/userContext";
 
 export default function WelcomeScreen() {
-  const router = useRouter();
   const { setUserRole } = useUser();
 
   useEffect(() => {
@@ -22,8 +21,7 @@ export default function WelcomeScreen() {
 
   const onPressPatient = async () => {
     setUserRole("patient");
-    router.push("./patient")
-  }
+  };
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
