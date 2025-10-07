@@ -20,7 +20,7 @@ const STORAGE_KEYS = {
   PATIENT_STATUS: "mediq_patient_status",
   DOCTOR_STATUS: "mediq_doctor_status",
   USER_ID: "mediq_user_id",
-  DEVICE_TOKEN: "mediq_device_token",
+  DEVICE_ID: "mediq_device_id",
 };
 
 // Create context
@@ -32,7 +32,7 @@ const initialState: UserState = {
   patientStatus: null,
   doctorStatus: null,
   userId: null,
-  deviceToken: null,
+  deviceId: null,
 };
 
 // Provider component
@@ -49,13 +49,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
         storedPatientStatus,
         storedDoctorStatus,
         storedUserId,
-        storedDeviceToken,
+        storedDeviceId,
       ] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.USER_ROLE),
         AsyncStorage.getItem(STORAGE_KEYS.PATIENT_STATUS),
         AsyncStorage.getItem(STORAGE_KEYS.DOCTOR_STATUS),
         AsyncStorage.getItem(STORAGE_KEYS.USER_ID),
-        AsyncStorage.getItem(STORAGE_KEYS.DEVICE_TOKEN),
+        AsyncStorage.getItem(STORAGE_KEYS.DEVICE_ID),
       ]);
 
       setUserState({
@@ -63,7 +63,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         patientStatus: storedPatientStatus as PatientStatus | null,
         doctorStatus: storedDoctorStatus as DoctorStatus | null,
         userId: storedUserId,
-        deviceToken: storedDeviceToken,
+        deviceId: storedDeviceId,
       });
 
       console.log("✅ User data loaded:", {
@@ -130,13 +130,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Set device token
-  const setDeviceToken = async (token: string) => {
+  // Set device ID
+  const setDeviceId = async (id: string) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.DEVICE_TOKEN, token);
-      setUserState((prev) => ({ ...prev, deviceToken: token }));
+      await AsyncStorage.setItem(STORAGE_KEYS.DEVICE_ID, id);
+      setUserState((prev) => ({ ...prev, deviceId: id }));
     } catch (error) {
-      console.error("❌ Error setting device token:", error);
+      console.error("❌ Error setting device ID:", error);
     }
   };
 
@@ -196,7 +196,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setPatientStatus,
     setDoctorStatus,
     setUserId,
-    setDeviceToken,
+    setDeviceId,
     resetUser,
     isPatient,
     isDoctor,
