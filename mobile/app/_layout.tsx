@@ -1,6 +1,7 @@
 import { Stack, usePathname, useRouter } from "expo-router";
 import { UserProvider, useUser } from "@/contexts/userContext";
 import { useEffect } from "react";
+import "./globals.css";
 
 function UserRedirect() {
   const { userState } = useUser();
