@@ -1,16 +1,18 @@
 import { Stack, usePathname, useRouter } from "expo-router";
 import { UserProvider, useUser } from "@/contexts/userContext";
 import { useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/firebaseConfig";
 
 function UserRedirect() {
   const { userState } = useUser();
   const router = useRouter();
   const pathname = usePathname();
+  const goTo = (target: string) => {
+    if (pathname !== target) router.replace(target as any);
+  };
 
   useEffect(() => {
-    const goTo = (target: string) => {
-      if (pathname !== target) router.replace(target as any);
-    };
     const timeout = setTimeout(() => {
       if (!userState || !userState.role) {
         goTo("/");
@@ -41,8 +43,23 @@ function UserRedirect() {
           break;
       }
     }, 0);
+
     return () => clearTimeout(timeout);
   }, [userState, router]);
+
+  useEffect(() => {
+    if (userState.role !== "doctor") return;
+
+    const unsubscribe = onAuthStateChanged(auth, (doctor) => {
+      if (doctor) {
+        goTo("/doctor/dashboard");
+      } else {
+        goTo("/doctor/login");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [userState]);
 
   return null;
 }

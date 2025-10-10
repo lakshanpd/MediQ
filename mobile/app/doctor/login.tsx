@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebaseConfig";
+import React, { use, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,9 +15,8 @@ export default function DoctorLoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    // TODO: implement login logic
-  };
+  const handleLogin = async () =>
+    await signInWithEmailAndPassword(auth, email, password);
 
   return (
     <KeyboardAvoidingView
@@ -55,9 +56,24 @@ export default function DoctorLoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", justifyContent: "center", padding: 20 },
-  card: { backgroundColor: "#f9f9f9", padding: 20, borderRadius: 10, elevation: 2 },
-  title: { fontSize: 20, fontWeight: "600", marginBottom: 16, textAlign: "center" },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    padding: 20,
+  },
+  card: {
+    backgroundColor: "#f9f9f9",
+    padding: 20,
+    borderRadius: 10,
+    elevation: 2,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 16,
+    textAlign: "center",
+  },
   label: { fontSize: 13, color: "#666", marginTop: 10, marginBottom: 6 },
   input: {
     borderWidth: 1,
