@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { use, useEffect } from "react";
 import { Stack, usePathname, useRouter } from "expo-router";
 import { Text, TouchableOpacity } from "react-native";
 import { Doctor, PatientFormData, Session } from "@/types";
@@ -9,6 +9,8 @@ import {
   query,
   where,
   limit,
+  Timestamp,
+  orderBy,
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { useUser } from "@/contexts/userContext";
@@ -66,10 +68,42 @@ export default function DoctorLayout() {
     }
   };
 
-  const fetchDoctorSessions = async () => {};
+  const fetchDoctorSessions = async (doctorId?: string | null) => {
+    if (!doctorId) {
+      setDoctorSessions(null);
+      return;
+    }
+
+    try {
+      const sessionsCol = collection(
+        db,
+        "sessions"
+      ) as CollectionReference<Session>;
+      const now = Timestamp.fromDate(new Date());
+      const q = query(
+        sessionsCol,
+        where("doctor_id", "==", doctorId),
+        orderBy("start_time", "asc")
+      );
+      const snap = await getDocs(q);
+
+      const sessions: Array<Session & { id: string }> = snap.docs.map(
+        (docSnap) => {
+          const data = docSnap.data() as Session;
+          return { id: docSnap.id, ...data };
+        }
+      );
+
+      setDoctorSessions(sessions.length ? sessions : []);
+    } catch (error) {
+      console.error("Error fetching sessions for doctor: ", error);
+      setDoctorSessions(null);
+    }
+  };
 
   useEffect(() => {
     fetchDoctorMetaData(userState.userId);
+    fetchDoctorSessions(userState.userId);
   }, [userState]);
 
   return (
