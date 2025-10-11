@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, FlatList } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from "react-native";
+import { db } from "@/firebaseConfig";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useDoctor } from "@/contexts/doctorContext";
 
 function formatMaybeTimestamp(v: any) {
@@ -37,6 +39,33 @@ function formatDuration(start: any, end: any) {
 
 export default function RequestsScreen() {
   const { doctorSessions, doctorTokens } = useDoctor();
+  const [updatingIds, setUpdatingIds] = React.useState<Record<string, boolean>>({});
+
+  async function handleAccept(tokenId: string, setUpdating: (s: Record<string, boolean>) => void | any) {
+    try {
+      setUpdatingIds((prev) => ({ ...prev, [tokenId]: true }));
+      const ref = doc(db, "tokens", tokenId);
+      await updateDoc(ref, { status: "accepted", updated_at: serverTimestamp() });
+      setUpdatingIds((prev) => ({ ...prev, [tokenId]: false }));
+    } catch (err) {
+      console.error("Accept failed", err);
+      setUpdatingIds((prev) => ({ ...prev, [tokenId]: false }));
+      Alert.alert("Failed", "Could not accept token");
+    }
+  }
+
+  async function handleReject(tokenId: string, setUpdating: (s: Record<string, boolean>) => void | any) {
+    try {
+      setUpdatingIds((prev) => ({ ...prev, [tokenId]: true }));
+      const ref = doc(db, "tokens", tokenId);
+      await updateDoc(ref, { status: "rejected", updated_at: serverTimestamp() });
+      setUpdatingIds((prev) => ({ ...prev, [tokenId]: false }));
+    } catch (err) {
+      console.error("Reject failed", err);
+      setUpdatingIds((prev) => ({ ...prev, [tokenId]: false }));
+      Alert.alert("Failed", "Could not reject token");
+    }
+  }
 
   const nowMs = Date.now();
   // upcoming sessions: start_time > now
@@ -77,6 +106,24 @@ export default function RequestsScreen() {
                       <Text style={styles.tokenField}>Contact: {t.patient?.contact_number ?? t.contact_number ?? ''}</Text>
                       <Text style={styles.tokenField}>Birthday: {t.patient?.birthday ?? t.birthday ?? ''}</Text>
                       <Text style={styles.tokenField}>Note: {t.patient?.illness_note ?? t.illness_note ?? ''}</Text>
+
+                      <View style={styles.tokenActions}>
+                        <TouchableOpacity
+                          style={[styles.acceptButton, updatingIds[t.id] ? { opacity: 0.7 } : null]}
+                          disabled={!!updatingIds[t.id]}
+                          onPress={() => handleAccept(t.id, setUpdatingIds)}
+                        >
+                          <Text style={styles.actionText}>Accept</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={[styles.rejectButton, updatingIds[t.id] ? { opacity: 0.7 } : null]}
+                          disabled={!!updatingIds[t.id]}
+                          onPress={() => handleReject(t.id, setUpdatingIds)}
+                        >
+                          <Text style={styles.actionText}>Reject</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ))
                 ) : (
@@ -105,4 +152,8 @@ const styles = StyleSheet.create({
   tokenCard: { backgroundColor: '#f9fbff', borderRadius: 8, padding: 10, marginTop: 8 },
   tokenName: { fontWeight: '700' },
   tokenField: { fontSize: 13, color: '#333' },
+  tokenActions: { flexDirection: 'row', marginTop: 10 },
+  acceptButton: { backgroundColor: '#2ecc71', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, marginRight: 8 },
+  rejectButton: { backgroundColor: '#ff4d4f', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
+  actionText: { color: '#fff', fontWeight: '700' },
 });
