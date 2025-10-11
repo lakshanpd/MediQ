@@ -30,25 +30,42 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Doctor Settings</Text>
+      {/* Profile card */}
+      <View style={styles.card}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {doctorMetaData
+              ? `${(doctorMetaData.first_name?.[0] ?? "").toUpperCase()}${(doctorMetaData.last_name?.[0] ?? "").toUpperCase()}`
+              : "DR"}
+          </Text>
+        </View>
 
-      {/* doctor metadata for testing */}
-      <View style={{ marginTop: 16, alignItems: "center" }}>
-        <Text style={{ fontWeight: "600" }}>Doctor Info</Text>
-        <Text>{doctorMetaData ? `${doctorMetaData.first_name} ${doctorMetaData.last_name}` : "(not loaded)"}</Text>
-        <Text>{doctorMetaData ? `id: ${doctorMetaData.id}` : ""}</Text>
+        <View style={styles.infoContainer}>
+          <Text style={styles.nameText}>
+            {doctorMetaData ? `${doctorMetaData.first_name} ${doctorMetaData.last_name}` : "(not loaded)"}
+          </Text>
+          <Text style={styles.specializationText}>{doctorMetaData?.specialization ?? "(no specialization)"}</Text>
+          <Text style={styles.idText}>{doctorMetaData ? `ID: ${doctorMetaData.id}` : ""}</Text>
+        </View>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Logout</Text>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" },
+  container: { flex: 1, alignItems: "center", justifyContent: "flex-start", backgroundColor: "#f6f8fb", padding: 16 },
   text: { fontSize: 18, fontWeight: "600", marginBottom: 20 },
-  button: { marginTop: 12, backgroundColor: "#ff3b30", paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8 },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  card: { width: "100%", backgroundColor: "#fff", borderRadius: 12, padding: 16, flexDirection: "row", alignItems: "center", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#dfe7ff", alignItems: "center", justifyContent: "center", marginRight: 12 },
+  avatarText: { fontSize: 20, fontWeight: "700", color: "#2a4fff" },
+  infoContainer: { flex: 1 },
+  nameText: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
+  specializationText: { fontSize: 14, color: "#666", marginBottom: 6 },
+  idText: { fontSize: 12, color: "#999" },
+  logoutButton: { marginTop: 24, backgroundColor: "#ff3b30", paddingVertical: 12, paddingHorizontal: 28, borderRadius: 10 },
+  logoutButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });
