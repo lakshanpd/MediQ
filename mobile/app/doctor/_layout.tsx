@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { useUser } from "@/contexts/userContext";
+import { DoctorProvider } from "@/contexts/doctorContext";
 
 // This layout exposes two child routes:
 // - /doctor/login (login screen)
@@ -38,9 +39,7 @@ export default function DoctorLayout() {
   const [doctorSessions, setDoctorSessions] = React.useState<any[] | null>(
     null
   );
-  const [doctorTokens, setDoctorTokens] = React.useState<
-    any[] | null
-  >(null);
+  const [doctorTokens, setDoctorTokens] = React.useState<any[] | null>(null);
   const { userState } = useUser();
 
   /**
@@ -108,38 +107,51 @@ export default function DoctorLayout() {
     fetchDoctorSessions(userState.userId);
   }, [userState]);
 
-useEffect(() => {
-  const sessionIds = doctorSessions ? doctorSessions.map((s) => s.id) : []; // up to 10 values allowed
+  useEffect(() => {
+    const sessionIds = doctorSessions ? doctorSessions.map((s) => s.id) : []; // up to 10 values allowed
 
-  if (!sessionIds.length) return;
+    if (!sessionIds.length) return;
 
-  const q = query(collection(db, "tokens"), where("session_id", "in", sessionIds));
+    const q = query(
+      collection(db, "tokens"),
+      where("session_id", "in", sessionIds)
+    );
 
-  const unsub = onSnapshot(
-    q,
-    (snap) => {
-      const items = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as DocumentData),
-      }));
-      setDoctorTokens(items);
-    },
-    (err) => console.error("tokens snapshot error:", err)
-  );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const items = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as DocumentData),
+        }));
+        setDoctorTokens(items);
+      },
+      (err) => console.error("tokens snapshot error:", err)
+    );
 
-  return () => unsub();
-}, [doctorSessions]);
+    return () => unsub();
+  }, [doctorSessions]);
 
   return (
-    <Stack>
-      <Stack.Screen
-        name="login"
-        options={{
-          title: "Form",
-          headerLeft: () => <BackButton />,
-        }}
-      />
-      <Stack.Screen name="tabs" options={{ headerShown: false }} />
-    </Stack>
+    <DoctorProvider
+      value={{
+        doctorMetaData,
+        doctorSessions: doctorSessions as Array<Session & { id: string }> | null,
+        doctorTokens: doctorTokens as Array<{ id: string } & DocumentData> | null,
+        fetchDoctorMetaData,
+        fetchDoctorSessions,
+      }}
+    >
+      <Stack>
+        <Stack.Screen
+          name="login"
+          options={{
+            title: "Form",
+            headerLeft: () => <BackButton />,
+          }}
+        />
+        <Stack.Screen name="tabs" options={{ headerShown: false }} />
+      </Stack>
+    </DoctorProvider>
   );
 }
