@@ -11,6 +11,8 @@ import {
   limit,
   Timestamp,
   orderBy,
+  onSnapshot,
+  DocumentData,
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { useUser } from "@/contexts/userContext";
@@ -33,11 +35,11 @@ export default function DoctorLayout() {
   const [doctorMetaData, setDoctorMetaData] = React.useState<
     (Doctor & { id: string }) | null
   >(null);
-  const [doctorSessions, setDoctorSessions] = React.useState<Session[] | null>(
+  const [doctorSessions, setDoctorSessions] = React.useState<any[] | null>(
     null
   );
   const [doctorTokens, setDoctorTokens] = React.useState<
-    PatientFormData[] | null
+    any[] | null
   >(null);
   const { userState } = useUser();
 
@@ -105,6 +107,28 @@ export default function DoctorLayout() {
     fetchDoctorMetaData(userState.userId);
     fetchDoctorSessions(userState.userId);
   }, [userState]);
+
+useEffect(() => {
+  const sessionIds = doctorSessions ? doctorSessions.map((s) => s.id) : []; // up to 10 values allowed
+
+  if (!sessionIds.length) return;
+
+  const q = query(collection(db, "tokens"), where("session_id", "in", sessionIds));
+
+  const unsub = onSnapshot(
+    q,
+    (snap) => {
+      const items = snap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as DocumentData),
+      }));
+      setDoctorTokens(items);
+    },
+    (err) => console.error("tokens snapshot error:", err)
+  );
+
+  return () => unsub();
+}, [doctorSessions]);
 
   return (
     <Stack>
