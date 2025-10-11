@@ -4,7 +4,14 @@ module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'mediq-blue': '#0564F5', 
+        'mediq-text-black': '#404040',
+        'mediq-dark-grey': '#9C9D9E',
+        'mediq-lightest-blue': '#D0E4FF'
+      },
+    },
   },
   plugins: [],
 }
