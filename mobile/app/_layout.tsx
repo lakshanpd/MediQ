@@ -115,8 +115,6 @@ export default function RootLayout() {
     <UserProvider>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="patient" options={{ headerShown: false }} />
-        <Stack.Screen name="doctor" options={{ headerShown: false }} />
       </Stack>
       <UserRedirect />
     </UserProvider>
