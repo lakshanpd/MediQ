@@ -122,7 +122,7 @@ export default function PatientFormScreen() {
           contact_number: contactNumber,
           illness_note: note,
         },
-        sessionId: selectedSession.id,
+        session_id: selectedSession.id,
         status: "pending",
         device_token: (await getExpoPushToken()) || "",
         device_id: userState.deviceId || "",
