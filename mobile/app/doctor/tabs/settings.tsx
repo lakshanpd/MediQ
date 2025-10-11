@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { signOut } from "firebase/auth";
 import { auth } from "@/firebaseConfig";
 import { useUser } from "@/contexts/userContext";
+import { useDoctor } from "@/contexts/doctorContext";
 
 export default function SettingsScreen() {
   const { resetUser } = useUser();
+  const { doctorMetaData } = useDoctor();
 
   const handleLogout = async () => {
     try {
@@ -29,6 +31,13 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Doctor Settings</Text>
+
+      {/* doctor metadata for testing */}
+      <View style={{ marginTop: 16, alignItems: "center" }}>
+        <Text style={{ fontWeight: "600" }}>Doctor Info</Text>
+        <Text>{doctorMetaData ? `${doctorMetaData.first_name} ${doctorMetaData.last_name}` : "(not loaded)"}</Text>
+        <Text>{doctorMetaData ? `id: ${doctorMetaData.id}` : ""}</Text>
+      </View>
 
       <TouchableOpacity style={styles.button} onPress={handleLogout}>
         <Text style={styles.buttonText}>Logout</Text>
