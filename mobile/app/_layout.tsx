@@ -30,7 +30,7 @@ function UserRedirect() {
   // routing based on userState (patient flows, etc.)
   useEffect(() => {
     // wait for userState to be available
-    if (!userState ) return;
+    if (!userState) return;
 
     // if no role, send to home
     if (!userState.role) {
@@ -81,8 +81,9 @@ function UserRedirect() {
 
     const unsubscribe = onAuthStateChanged(auth, (doctor) => {
       if (doctor) {
-        if (pathnameRef.current !== "/doctor/dashboard") {
-          router.replace("/doctor/dashboard" as any);
+        // navigate to the existing doctor tab (doctor/tabs/queue)
+        if (pathnameRef.current !== "/doctor/tabs/queue") {
+          router.replace("/doctor/tabs/queue" as any);
         }
         setDoctorStatus?.("active");
         setUserId?.(doctor.uid);
