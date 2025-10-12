@@ -9,6 +9,8 @@ module.exports = {
         'mediq-blue': '#0564F5', 
         'mediq-text-black': '#404040',
         'mediq-dark-grey': '#9C9D9E',
+        'mediq-light-grey': '#C5C4C5',
+        'mediq-lightest-grey': '#EFEFEF',
         'mediq-lightest-blue': '#D0E4FF'
       },
     },

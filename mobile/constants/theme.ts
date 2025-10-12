@@ -58,5 +58,6 @@ export const MediQImages = {
   main_bg: require('../assets/images/main_bg.png'),
   main_bg_top: require('../assets/images/main_bg_top.png'),
   doctor_avatar_main: require('../assets/images/doctor_avatar_main.png'),
-  patient_avatar_main: require('../assets/images/patient_avatar_main.png')
+  patient_avatar_main: require('../assets/images/patient_avatar_main.png'),
+  doctor_avatar_standing: require('../assets/images/doctor_avatar_standing.png'),
 };
