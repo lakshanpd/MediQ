@@ -1,35 +1,33 @@
-import {
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  StatusBar,
-  Pressable,
-  Platform,
-  Image,
-  Alert
-} from "react-native";
-import { collection, getDocs, addDoc } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
-import { useState, useEffect, use } from "react";
-import { getExpoPushToken } from "@/utils/getExpoPushToken";
-import { PatientFormData } from "@/types";
-import { useUser } from "@/contexts/userContext";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { MediQImages } from "@/constants/theme";
+import { useUser } from "@/contexts/userContext";
+import { PatientFormData } from "@/types";
+import { getExpoPushToken } from "@/utils/getExpoPushToken";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from "expo-router";
+import { addDoc, collection, getDocs } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { db } from "../../firebaseConfig";
 
 export default function PatientFormScreen() {
   const router = useRouter();
 
   const [doctors, setDoctors] = useState<
-    Array<{ id: string; first_name: string; specialization: string; [key: string]: any }>
+    { id: string; first_name: string; specialization: string; [key: string]: any }[]
   >([]);
   const [sessions, setSessions] = useState<
-    Array<{ id: string; [key: string]: any }>
+    { id: string; [key: string]: any }[]
   >([]);
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [selectedSession, setSelectedSession] = useState<any>(null);
@@ -45,6 +43,8 @@ export default function PatientFormScreen() {
   const [selectedSpecialization, setSelectedSpecialization] = useState<string>("");
   const [showSpecializations, setShowSpecializations] = useState(false);
 
+   const [selectedGender, setSelectedGender] = useState<"Male" | "Female" | "">("");
+
     const handleSpecializationSelect = (specialization: string) => {
     setSelectedSpecialization(specialization);
     setSelectedDoctor(null); // Reset doctor selection when specialization changes
@@ -55,7 +55,7 @@ export default function PatientFormScreen() {
   const fetchDoctors = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "doctors"));
-      const doctorsList: Array<{ id: string; first_name: string; specialization: string; [key: string]: any }> = [];
+      const doctorsList: { id: string; first_name: string; specialization: string; [key: string]: any }[] = [];
       const specializationSet = new Set<string>();
       querySnapshot.forEach((doc) => {
         const doctorData = { id: doc.id, ...doc.data() } as { id: string; first_name: string; specialization: string; [key: string]: any };
@@ -72,7 +72,7 @@ export default function PatientFormScreen() {
   const fetchAvailableSessions = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "sessions"));
-      const sessionsList: Array<{ id: string; [key: string]: any }> = [];
+      const sessionsList: { id: string; [key: string]: any }[] = [];
       querySnapshot.forEach((doc) => {
         sessionsList.push({ id: doc.id, ...doc.data() });
       });
@@ -103,11 +103,11 @@ export default function PatientFormScreen() {
 
   const getAvailableSessionsForDoctor = () => {
     if (!selectedDoctor) return [];
-    return sessions.filter(
+    const filteredSessions = sessions.filter(
       (session) =>
-        session.doctor_id === selectedDoctor.id &&
-        isSessionWithin12Hours(session)
+        session.doctor_id === selectedDoctor.uid 
     );
+    return filteredSessions;
   };
 
   const formatSessionTime = (session: any) => {
@@ -292,7 +292,7 @@ export default function PatientFormScreen() {
                         ? 'text-gray-400' 
                         : 'text-gray-300'
                   }`}>
-                    {selectedDoctor?.first_name || "Select Doctor"}
+                    {selectedDoctor? `Dr. ${selectedDoctor.first_name}` : "Select Doctor"}
                   </Text>
                   {selectedDoctor && (
                     <Text className="text-sm text-gray-500 mt-1">
@@ -320,9 +320,7 @@ export default function PatientFormScreen() {
                         >
                           <Text className={`text-base font-medium ${
                             selectedDoctor?.id === doctor.id ? 'text-blue-600' : 'text-gray-800'
-                          }`}>
-                            {doctor.first_name}
-                          </Text>
+                          }`}>Dr. {doctor.first_name}</Text>
                           <Text className="text-sm text-gray-500 mt-1">
                             {doctor.specialization}
                           </Text>
@@ -339,10 +337,177 @@ export default function PatientFormScreen() {
                 </View>
               )}
 
+              <View className="mt-6">
+                <Text className="text-lg font-medium text-mediq-text-black mb-3">
+                  First Name
+                </Text>
+                <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex-row items-center mb-4">
+                  <Ionicons name="person-outline" size={20} color="#6B7280" />
+                  <TextInput
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    placeholder="Enter your first name"
+                    placeholderTextColor="#9CA3AF"
+                    className="flex-1 ml-3 text-base text-mediq-blue font-medium"
+                  />
+                </View>
+                <Text className="text-lg font-medium text-mediq-text-black mb-3">
+                  Last Name
+                </Text>
+                <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex-row items-center">
+                  <Ionicons name="person-outline" size={20} color="#6B7280" />
+                  <TextInput
+                    value={lastName}
+                    onChangeText={setLastName}
+                    placeholder="Enter your last name"
+                    placeholderTextColor="#9CA3AF"
+                    className="flex-1 ml-3 text-base text-mediq-blue font-medium"
+                  />
+                </View>
+              </View>
+          
+            <View className="mt-6">
+            <Text className="text-lg font-medium text-mediq-text-black mb-3">
+              Gender
+            </Text>
+            <View className="flex-row justify-center items-center">
+              <Pressable
+                onPress={() => setSelectedGender("Male")}
+                className={`w-40 h-14 rounded-xl items-center justify-center mr-5 ${
+                  selectedGender === "Male" 
+                    ? 'border border-black' 
+                    : 'bg-gray-50 border border-gray-200'
+                }`}>
+                <Text className={`text-base ${
+                  selectedGender === "Male" ? 'text-mediq-blue font-medium' : 'text-gray-600 font-medium'
+                }`}>
+                  Male
+                </Text>
+              </Pressable>
+                <Pressable
+                onPress={() => setSelectedGender("Female")}
+                className={`w-40 h-14 rounded-xl items-center justify-center ml-5 ${
+                  selectedGender === "Female"
+                    ? 'border border-black'
+                    : 'bg-gray-50 border border-gray-200'
+                }`}>
+                <Text className={`text-base ${
+                  selectedGender === "Female" ? 'text-mediq-blue font-medium' : 'text-gray-600 font-medium'
+                }`}>
+                  Female
+                </Text>
+              </Pressable>
+            </View>
+
+             <View className="mt-6">
+            <Text className="text-lg font-medium text-mediq-text-black mb-3">
+              Date of Birth
+            </Text>
+            <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex-row items-center">
+              <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+              <TextInput
+                value={birthday}
+                onChangeText={setBirthday}
+                placeholder="DD/MM/YYYY"
+                placeholderTextColor="#9CA3AF"
+                className="flex-1 ml-3 text-base text-mediq-blue font-medium"
+              />
+            </View>
+          </View>
+          <View className="mt-6">
+            <Text className="text-lg font-medium text-mediq-text-black mb-3">
+              Contact No
+            </Text>
+            <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex-row items-center">
+              <Ionicons name="call-outline" size={20} color="#6B7280" />
+              <TextInput
+                value={contactNumber}
+                onChangeText={setContactNumber}
+                placeholder="+94 567 7689"
+                placeholderTextColor="#9CA3AF"
+                className="flex-1 ml-3 text-base text-mediq-blue font-medium"
+                keyboardType="phone-pad"
+              />
+            </View>
+          </View>
+
+            <View className="mt-6">
+            <Text className="text-lg font-medium text-mediq-text-black mb-1">
+              Type of Illness
+            </Text>
+            <Text className="text-sm text-gray-500 mb-3">(Optional)</Text>
+            <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 min-h-[120px]">
+              <TextInput
+                value={note}
+                onChangeText={setNote}
+                placeholder="I haven't been eating well lately, and I don't know why. My right foot also hurts so much, please help me, doc A!"
+                placeholderTextColor="#9CA3AF"
+                className="flex-1 text-base text-gray-800"
+                multiline
+                textAlignVertical="top"
+              />
+              <Text className="text-right text-sm text-gray-400 mt-2">
+                {note.length}/250
+              </Text>
+            </View>
+          </View>
+
+{selectedDoctor && (
+  <View className="mt-6">
+    <Text className="text-lg font-medium text-mediq-text-black mb-3">
+      Available Time
+    </Text>
+    <Pressable
+      onPress={() => setShowSessions(!showSessions)}
+      className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex-row items-center justify-between active:bg-gray-100"
+    >
+      <Text className={`text-base ${selectedSession ? 'text-mediq-blue font-medium' : 'text-gray-400'}`}>
+        {selectedSession ? formatSessionTime(selectedSession) : "Choose available time"}
+      </Text>
+      <Ionicons 
+        name={showSessions ? "chevron-up" : "chevron-down"} 
+        size={20} 
+        color="#6B7280" 
+      />
+    </Pressable>
+
+    {showSessions && (
+      <View className="bg-white border border-gray-200 rounded-xl mt-2 max-h-48">
+        <ScrollView showsVerticalScrollIndicator={true}>
+          {getAvailableSessionsForDoctor().length > 0 ? (
+            getAvailableSessionsForDoctor().map((session, index) => (
+              <Pressable
+                key={session.id}
+                onPress={() => {
+                  setSelectedSession(session);
+                  setShowSessions(false);
+                }}
+                className={`p-4 ${index !== getAvailableSessionsForDoctor().length - 1 ? 'border-b border-gray-100' : ''} 
+                           ${selectedSession?.id === session.id ? 'bg-blue-50 rounded-xl' : ''} active:bg-gray-50`}
+              >
+                <Text className={`text-base ${selectedSession?.id === session.id ? 'text-blue-600 font-medium' : 'text-gray-700'}`}>
+                  {formatSessionTime(session)}
+                </Text>
+              </Pressable>
+            ))
+          ) : (
+            <View className="p-4">
+              <Text className="text-gray-500 text-center">
+                No available sessions for this doctor
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    )}
+  </View>
+)}
+          
+          </View>
           </ScrollView>
 <View className="px-6 pb-6 ">
           <Pressable
-            onPress={() => console.log("Continue pressed")}
+            onPress={handleSubmit}
             className="h-16 rounded-2xl bg-mediq-blue p-4 flex-row items-center justify-center active:scale-95">
             <Text className="text-xl text-white font-bold">
               Continue

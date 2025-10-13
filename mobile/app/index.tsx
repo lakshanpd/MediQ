@@ -72,7 +72,7 @@ export default function WelcomeScreen() {
 
              <Pressable
               onPress={onPressPatient}
-              className="w-40 h-42 bg-mediq-lightest-blue rounded-3xl items-center p-3 ml-6 shadow-md active:scale-95"
+              className="w-40 h-42 bg-mediq-lightest-blue rounded-3xl items-center p-3 ml-5 shadow-md active:scale-95"
             >
               <View className="-mt-12">
                 <Image
