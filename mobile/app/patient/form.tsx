@@ -105,7 +105,8 @@ export default function PatientFormScreen() {
     if (!selectedDoctor) return [];
     const filteredSessions = sessions.filter(
       (session) =>
-        session.doctor_id === selectedDoctor.uid 
+        session.doctor_id === selectedDoctor.uid &&
+        isSessionWithin12Hours(session)
     );
     return filteredSessions;
   };
@@ -149,7 +150,6 @@ export default function PatientFormScreen() {
         return;
       }
 
-
       // Create patient data object
       const patientData: PatientFormData = {
         patient: {
@@ -158,9 +158,9 @@ export default function PatientFormScreen() {
           contact_number: contactNumber,
           illness_note: note,
         },
-        sessionId: selectedSession.id,
+        session_id: selectedSession.id,
         status: "pending",
-        device_token: await getExpoPushToken() || "",
+        device_token: (await getExpoPushToken()) || "",
         device_id: userState.deviceId || "",
         created_at: new Date(),
         updated_at: new Date(),
@@ -168,7 +168,7 @@ export default function PatientFormScreen() {
 
       // Add document to 'tokens' collection
       const docRef = await addDoc(collection(db, "tokens"), patientData);
-      setUserData({tokenId: docRef.id});
+      setUserData({ tokenId: docRef.id });
       setPatientStatus("pending");
 
       // Reset form after successful submission

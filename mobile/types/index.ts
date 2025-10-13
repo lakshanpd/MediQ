@@ -7,7 +7,7 @@ export interface Patient {
 
 export interface PatientFormData {
   patient: Patient;
-  sessionId: string;
+  session_id: string;
   status:
     | "pending"
     | "accepted"

@@ -24,6 +24,10 @@ export default function WelcomeScreen() {
     setUserRole("patient");
   };
 
+    const onPressDoctor = async () => {
+    setUserRole("doctor");
+  };
+
   return (
     <View className="flex-1 bg-white"> 
       <StatusBar barStyle="dark-content" />
