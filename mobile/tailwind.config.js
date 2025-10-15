@@ -6,7 +6,9 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'mediq-blue': '#0564F5', 
+        'mediq-blue': '#0564F5',
+        'mediq-light-blue': '#639AE9',
+        'mediq-red': '#EA4758',
         'mediq-text-black': '#404040',
         'mediq-dark-grey': '#9C9D9E',
         'mediq-light-grey': '#C5C4C5',

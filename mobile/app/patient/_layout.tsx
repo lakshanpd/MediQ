@@ -12,11 +12,11 @@ function BackButton() {
 
 export default function PatientLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="form" options={{ headerShown: false }} />
-      <Stack.Screen name="status/pending" options={{ title: "Pending" }} />
-      <Stack.Screen name="status/rejected" options={{ title: "Rejected" }} />
-      <Stack.Screen name="status/accepted" options={{ title: "Accepted" }} />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="form" />
+      <Stack.Screen name="status/pending" />
+      <Stack.Screen name="status/rejected" />
+      <Stack.Screen name="status/accepted" />
     </Stack>
   );
 }

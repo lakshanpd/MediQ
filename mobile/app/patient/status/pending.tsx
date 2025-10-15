@@ -1,14 +1,19 @@
-import React from "react";
+import { MediQImages } from "@/constants/theme";
 import { useUser } from "@/contexts/userContext";
-import { useTokenListener } from "@/hooks/useTokenListener";
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-import { router } from "expo-router";
+import { useDoctorListener } from "@/hooks/useDoctorListener";
+import { useSessionListener } from "@/hooks/useSessionListener";
+import { useTokenListener } from "@/hooks/useTokenListener";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import React from "react";
+import { Alert, Image, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PatientPendingScreen() {
   const { userState, setPatientStatus } = useUser();
   const tokenData = useTokenListener(userState?.userData?.tokenId ?? null);
+  const { sessionData } = useSessionListener(tokenData?.session_id ?? null);
+  const { doctorData } = useDoctorListener(sessionData?.doctor_id ?? null);
 
   const handleCancel = () => {
     Alert.alert(
@@ -59,43 +64,105 @@ export default function PatientPendingScreen() {
 
   if (tokenData.status === "pending") {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Request submitted</Text>
+      <View className="flex-1 bg-white"> 
+            <StatusBar barStyle="dark-content" />
+      
+            <Image
+              source={MediQImages.main_bg_top}
+              className="absolute inset-0 w-full h-full"
+              resizeMode="cover"
+              accessible={false}
+            />
+            <SafeAreaView className="flex-1">
+          <View className="flex items-center mb-4 ">
+            <Image
+              source={MediQImages.mediq_inline_logo}
+              className="w-48 h-20  flex mt-10 mb-10"
+              resizeMode="contain"
+            />
+              <Text className="text-2xl font-bold text-mediq-blue text-center mb-2 mx-8 ">
+              Your token request has been submitted to the doctor.
+            </Text>
 
-        <Text style={styles.info}>
-          We are reviewing your appointment request. You will be notified when
-          it is accepted.
-        </Text>
+            <Text className="text-base text-mediq-text-black text-center mx-8">
+              You will receive a notification once your token is accepted.
+            </Text>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Name</Text>
-          <Text style={styles.value}>{tokenData?.patient?.name ?? "none"}</Text>
+          </View>
+          <View className="bg-mediq-lightest-grey rounded-2xl p-6 mx-6 mt-2 mb-6 flex-1">
+            <Text className="text-2xl font-bold text-mediq-blue ">
+              Dr. {doctorData?.first_name || 'Loading...'} {doctorData?.last_name || ''}
+            </Text>
+            <Text className="text-lg font-normal text-mediq-text-black mb-2">
+               {doctorData?.specialization || 'Loading...'}
+            </Text>
+          <View className = "flex-row justify-between mt-3">
+            <Text className="text-xl text-mediq-text-black font-semibold">
+              {sessionData?.start_time ? new Date(sessionData.start_time).toLocaleDateString() : 'Loading...'}
+            </Text>
+            <Text className="text-xl text-mediq-text-black font-semibold">
+              {sessionData?.start_time && sessionData?.end_time 
+                  ? `${new Date(sessionData.start_time).toLocaleTimeString()} - ${new Date(sessionData.end_time).toLocaleTimeString()}`
+                  : 'Loading...'
+              }
+            </Text>
+            </View>
+            <View className="flex-row justify-end mt-2">
+              <Text className="text-lg font-medium text-mediq-light-blue mb-2">
+                Medihelp, Ratmalana
+              </Text>
+            </View>
+          <View className="border-b border-mediq-blue mb-2" />
 
-          <Text style={styles.label}>Birthday</Text>
-          <Text style={styles.value}>
-            {tokenData?.patient?.birthday ?? "none"}
-          </Text>
+          <View className="flex mt-2 mb-3">
+            <Text className="text-md font-bold text-mediq-blue">
+              Name
+            </Text>
+            <Text className="text-lg text-mediq-text-black font-medium pl-2">
+               {tokenData?.patient?.name || 'N/A'}
+            </Text>
+          </View>
+          <View className="flex mb-3">
+            <Text className="text-md font-bold text-mediq-blue">
+              Birthday
+            </Text>
+            <Text className="text-lg text-mediq-text-black font-medium pl-2">
+              {tokenData?.patient?.birthday || 'N/A'}
+            </Text>
+          </View>
+          <View className="flex mb-3">
+            <Text className="text-md font-bold text-mediq-blue">
+              Contact
+            </Text>
+            <Text className="text-lg text-mediq-text-black font-medium pl-2">
+              {tokenData?.patient?.contact_number || 'N/A'}
+            </Text>
+          </View>
+          <View className="border-b border-mediq-blue mb-2" />
 
-          <Text style={styles.label}>Contact</Text>
-          <Text style={styles.value}>
-            {tokenData?.patient?.contact_number ?? "none"}
-          </Text>
+          <View className="flex items-center justify-center mt-2 mb-3 ">
+            <Text className="text-2xl font-bold text-mediq-blue">
+              Pending
+            </Text>
+            </View>
 
-          <Text style={styles.label}>Note</Text>
-          <Text style={styles.value}>
-            {tokenData?.patient?.illness_note ?? "none"}
-          </Text>
+          </View>
 
-                    <Text style={styles.label}>Status</Text>
-          <Text style={styles.value}>
-            {tokenData?.status ?? "none"}
-          </Text>
-        </View>
 
-        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-          <Text style={styles.cancelButtonText}>Cancel Appointment</Text>
-        </TouchableOpacity>
-      </View>
+
+          <View className="h-16 px-6 mb-6  ">
+            <Pressable
+              onPress={handleCancel}
+              className="h-16 rounded-2xl bg-mediq-red flex-row items-center justify-center active:scale-95">
+              <Text className="text-xl text-white font-bold">
+                Cancel
+              </Text>
+            
+                    </Pressable>
+                  </View>
+          
+          </SafeAreaView>
+            </View>
     );
   }
   return null;

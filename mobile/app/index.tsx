@@ -59,7 +59,7 @@ export default function WelcomeScreen() {
 
           <View className="flex-row justify-center items-center mt-16">
             <Pressable
-              onPress={() => console.log("Doctor pressed")}
+              onPress={onPressDoctor}
               className="w-40 h-42 bg-mediq-lightest-blue rounded-3xl items-center p-3 mr-5 shadow-md active:scale-95"
             >
               <View className="-mt-12">
