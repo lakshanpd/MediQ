@@ -89,7 +89,8 @@ export default function PatientPendingScreen() {
             </Text>
 
           </View>
-          <View className="bg-mediq-lightest-grey rounded-2xl p-6 mx-6 mt-2 mb-6 flex-1">
+          <View className="flex-1 ">
+          <View className="bg-mediq-lightest-grey rounded-2xl p-6 mx-6 mt-2 mb-6">
             <Text className="text-2xl font-bold text-mediq-blue ">
               Dr. {doctorData?.first_name || 'Loading...'} {doctorData?.last_name || ''}
             </Text>
@@ -140,7 +141,7 @@ export default function PatientPendingScreen() {
           </View>
           <View className="border-b border-mediq-blue mb-2" />
 
-          <View className="flex items-center justify-center mt-2 mb-3 ">
+          <View className="flex items-center justify-center mt-2 ">
             <Text className="text-2xl font-bold text-mediq-blue">
               Pending
             </Text>
@@ -148,7 +149,7 @@ export default function PatientPendingScreen() {
 
           </View>
 
-
+          </View>
 
           <View className="h-16 px-6 mb-6  ">
             <Pressable

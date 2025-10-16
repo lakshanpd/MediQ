@@ -42,7 +42,8 @@ export default function PatientAcceptedScreen() {
             </Text>
 
           </View>
-          <View className="bg-mediq-lightest-grey rounded-2xl p-6 mx-6 mt-2 mb-6 flex-1">
+          <View className="flex-1 ">
+          <View className="bg-mediq-lightest-grey rounded-2xl p-6 mx-6 mt-2 mb-6">
             <Text className="text-2xl font-bold text-mediq-blue ">
               Dr. {doctorData?.first_name || 'Loading...'} {doctorData?.last_name || ''}
             </Text>
@@ -112,7 +113,7 @@ export default function PatientAcceptedScreen() {
             </View>
 
           </View>
-
+          </View>
 
 
           <View className="h-16 px-6 mb-6  ">
