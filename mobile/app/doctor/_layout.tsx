@@ -143,13 +143,7 @@ export default function DoctorLayout() {
       }}
     >
       <Stack>
-        <Stack.Screen
-          name="login"
-          options={{
-            title: "Form",
-            headerLeft: () => <BackButton />,
-          }}
-        />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="tabs" options={{ headerShown: false }} />
       </Stack>
     </DoctorProvider>
