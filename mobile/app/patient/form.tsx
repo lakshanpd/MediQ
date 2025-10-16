@@ -3,6 +3,7 @@ import { useUser } from "@/contexts/userContext";
 import { PatientFormData } from "@/types";
 import { getExpoPushToken } from "@/utils/getExpoPushToken";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from "expo-router";
 import { addDoc, collection, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -105,8 +106,7 @@ export default function PatientFormScreen() {
     if (!selectedDoctor) return [];
     const filteredSessions = sessions.filter(
       (session) =>
-        session.doctor_id === selectedDoctor.uid &&
-        isSessionWithin12Hours(session)
+        session.doctor_id === selectedDoctor.uid
     );
     return filteredSessions;
   };
@@ -144,8 +144,13 @@ export default function PatientFormScreen() {
 
   const handleSubmit = async () => {
     try {
+      // Add haptic feedback at the start
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
       // Validate required fields
       if (!firstName || !lastName || !selectedDoctor || !selectedSession) {
+        // Error haptic feedback
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         alert("Please fill in all required fields");
         return;
       }
@@ -171,6 +176,9 @@ export default function PatientFormScreen() {
       setUserData({ tokenId: docRef.id });
       setPatientStatus("pending");
 
+      // Success haptic feedback
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
       // Reset form after successful submission
       setFirstName("");
       setLastName("");
@@ -182,6 +190,8 @@ export default function PatientFormScreen() {
 
       alert("Registration submitted successfully!");
     } catch (error) {
+      // Error haptic feedback
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.error("Error adding document: ", error);
       alert("Error submitting registration. Please try again.");
     }
