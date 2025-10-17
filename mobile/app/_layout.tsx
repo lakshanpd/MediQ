@@ -20,42 +20,28 @@ function UserRedirect() {
   // store unsubscribe so listener is attached only once
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  const goTo = (target: string) => {
-    const current = pathnameRef.current ?? "";
-    if (current !== target) {
-      // cast to any to satisfy expo-router strict types
-      router.replace(target as any);
-    }
-  };
-
   // routing based on userState (patient flows, etc.)
   useEffect(() => {
     // wait for userState to be available
-    if (!userState) return;
-
-    // if no role, send to home
-    if (!userState.role) {
-      goTo("/");
-      return;
-    }
+    if (!userState || !userState.role) return;
 
     // route based on role + patient status
     if (userState.role === "patient") {
       switch (userState.patientStatus) {
         case "form":
-          goTo("/patient/form");
+          router.push("/patient/form");
           break;
         case "pending":
-          goTo("/patient/status/pending");
+          router.push("/patient/status/pending");
           break;
         case "accepted":
-          goTo("/patient/status/accepted");
+          router.push("/patient/status/accepted");
           break;
         case "rejected":
-          goTo("/patient/status/rejected");
+          router.push("/patient/status/rejected");
           break;
         default:
-          goTo("/patient/form");
+          router.push("/patient/form");
           break;
       }
     }

@@ -212,7 +212,7 @@ export default function PatientFormScreen() {
           {/* Absolute Back Button (pinned top-left) */}
 
           <Pressable
-            onPress={() => router.replace("/")}
+            onPress={() => router.back()}
             className="w-16 h-16 rounded-2xl border border-slate-400 p-4 active:scale-95" // z-50 keeps it above other elements
           >
             <Ionicons 
