@@ -73,9 +73,4 @@ export interface UserContextType {
   setDeviceId: (token: string) => Promise<void>;
   resetUser: () => Promise<void>;
   setUserData: (data: any) => void;
-
-  // Computed values
-  isPatient: boolean;
-  isDoctor: boolean;
-  getCurrentRoute: () => string;
 }
