@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet, FlatList } from "react-native";
+import { View, Text, StyleSheet, FlatList, StatusBar } from "react-native";
 import { useDoctor } from "@/contexts/doctorContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function formatMaybeTimestamp(v: any) {
   if (!v) return "";
@@ -59,7 +60,9 @@ export default function QueueScreen() {
   });
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-white">
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView className="flex-1">
       {currentSession ? (
         <View style={styles.sessionHeader}>
           <Text style={styles.sessionLabel}>Current session</Text>
@@ -100,7 +103,9 @@ export default function QueueScreen() {
           <Text style={{ color: '#666' }}>No active session right now</Text>
         </View>
       )}
+      </SafeAreaView>
     </View>
+  
   );
 }
 

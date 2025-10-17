@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, StatusBar } from "react-native";
 import { db } from "@/firebaseConfig";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useDoctor } from "@/contexts/doctorContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function formatMaybeTimestamp(v: any) {
   if (!v) return "";
@@ -83,7 +84,9 @@ export default function RequestsScreen() {
   });
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-white">
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView className="flex-1">
       <Text style={styles.header}>Upcoming Sessions & Requests</Text>
 
       <FlatList
@@ -139,6 +142,7 @@ export default function RequestsScreen() {
           </View>
         )}
       />
+      </SafeAreaView>
     </View>
   );
 }
