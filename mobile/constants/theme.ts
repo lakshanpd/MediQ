@@ -64,4 +64,5 @@ export const MediQImages = {
   navbar_icon_sessions: require('../assets/images/navbar_icon_sessions.png'),
   navbar_icon_requests: require('../assets/images/navbar_icon_requests.png'),
   navbar_icon_settings: require('../assets/images/navbar_icon_settings.png'),
+  session_add_icon: require('../assets/images/session_add_icon.png'),
 };

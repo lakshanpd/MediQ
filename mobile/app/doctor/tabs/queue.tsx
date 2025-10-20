@@ -1,6 +1,8 @@
-import React from "react";
-import { View, Text, StyleSheet, FlatList, StatusBar } from "react-native";
 import { useDoctor } from "@/contexts/doctorContext";
+import { MediQImages } from "@/constants/theme";
+import { useRouter } from "expo-router";
+import React from "react";
+import { FlatList, Pressable, StatusBar, StyleSheet, Text, View, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 function formatMaybeTimestamp(v: any) {
@@ -39,6 +41,8 @@ function formatDuration(start: any, end: any) {
 
 export default function QueueScreen() {
   const { doctorSessions, doctorTokens } = useDoctor();
+  const router = useRouter();
+
   // determine current active session (now between start_time and end_time)
   const nowMs = Date.now();
   const currentSession = (doctorSessions ?? []).find((s: any) => {
@@ -63,6 +67,13 @@ export default function QueueScreen() {
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
       <SafeAreaView className="flex-1">
+        <View className="flex-row justify-end items-center  ">
+          <Pressable
+            onPress={() => router.push("/doctor/add-session")}
+            className="w-20 h-20  flex items-center justify-center active:scale-95 ">
+            <Image source={MediQImages.session_add_icon} className="w-10 h-10 mr-5 mt-3" />
+          </Pressable>
+        </View>
       {currentSession ? (
         <View style={styles.sessionHeader}>
           <Text style={styles.sessionLabel}>Current session</Text>
