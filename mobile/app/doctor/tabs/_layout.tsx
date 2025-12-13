@@ -14,7 +14,7 @@ export default function DoctorLayout() {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#E5E7EB",
-          height: 90,
+          height: 100,
           paddingBottom: 25,
           paddingTop: 10,
         },
