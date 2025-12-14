@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { MediQImages } from "@/constants/theme";
 import { useRouter } from "expo-router";
+import { useUser } from "@/contexts/userContext";
 
 
 export default function DoctorLoginScreen() {
@@ -22,105 +23,106 @@ export default function DoctorLoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { setUserRole } = useUser();
 
   const handleLogin = async () =>
     await signInWithEmailAndPassword(auth, email, password);
 
   return (
-       <View className="flex-1 bg-white">
-          <StatusBar barStyle="dark-content" />
-                <Image
+    <View className="flex-1 bg-white">
+      <StatusBar barStyle="dark-content" />
+      <Image
         source={MediQImages.main_bg_top}
         className="absolute inset-0 w-full h-full"
         resizeMode="cover"
         accessible={false}
       />
-          <SafeAreaView className="flex-1">
-            {/* Top-level container so absolute-positioned BackButton overlays content */}
-            <View className="flex-row justify-start items-center absolute top-24 left-8 ">
-              {/* Absolute Back Button (pinned top-left) */}
-    
-              <Pressable
-                onPress={() => router.replace("/")}
-                className="w-16 h-16 rounded-2xl border border-slate-400 p-4 active:scale-95" // z-50 keeps it above other elements
-              >
-                <Ionicons 
-                      name={"chevron-back"} 
-                      size={24} 
-                      color="#6B7280" 
-                    />
-              </Pressable>
-              <Text className="text-2xl font-bold text-mediq-text-black ml-6">
-                Doctor Login
-              </Text>
-            </View>
+      <SafeAreaView className="flex-1">
+        {/* Top-level container so absolute-positioned BackButton overlays content */}
+        <View className="flex-row justify-start items-center absolute top-24 left-8 ">
+          {/* Absolute Back Button (pinned top-left) */}
 
-            <View className="items-center px-6 mt-16">
-              <Image
-                source={MediQImages.mediq_inline_logo}
-                className="w-56 h-32 mt-16 "
-                resizeMode="contain"
+          <Pressable
+            onPress={() => { router.back(); setUserRole(null); }}
+            className="w-16 h-16 rounded-2xl border border-slate-400 p-4 active:scale-95" // z-50 keeps it above other elements
+          >
+            <Ionicons
+              name={"chevron-back"}
+              size={24}
+              color="#6B7280"
+            />
+          </Pressable>
+          <Text className="text-2xl font-bold text-mediq-text-black ml-6">
+            Doctor Login
+          </Text>
+        </View>
+
+        <View className="items-center px-6 mt-16">
+          <Image
+            source={MediQImages.mediq_inline_logo}
+            className="w-56 h-32 mt-16 "
+            resizeMode="contain"
           />
+        </View>
+
+        <View className="px-6 mt-12">
+          {/* Email Address */}
+          <Text className="text-lg font-semibold text-mediq-text-black mb-3">
+            Email Address
+          </Text>
+          <View className="flex-row items-center bg-white border-2 border-mediq-light-grey rounded-2xl px-4 mb-8 h-16">
+            <Ionicons name="mail" size={24} color="#6B7280" />
+            <TextInput
+              className="flex-1 ml-3 text-lg text-mediq-text-black"
+              placeholder="elementary221b@gmail.com"
+              placeholderTextColor="#9CA3AF"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
           </View>
-          
-            <View className="px-6 mt-12">
-            {/* Email Address */}
-            <Text className="text-lg font-semibold text-mediq-text-black mb-3">
-              Email Address
-            </Text>
-            <View className="flex-row items-center bg-white border-2 border-mediq-light-grey rounded-2xl px-4 mb-8 h-16">
-              <Ionicons name="mail" size={24} color="#6B7280" />
-              <TextInput
-                className="flex-1 ml-3 text-lg text-mediq-text-black"
-                placeholder="elementary221b@gmail.com"
-                placeholderTextColor="#9CA3AF"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
-            </View>
 
-            {/* Password */}
-            <Text className="text-lg font-semibold text-mediq-text-black mb-3">
-              Password
-            </Text>
-            <View className="flex-row items-center bg-white border-2 border-mediq-light-grey rounded-2xl px-4 mb-8 h-16">
-              <Ionicons name="lock-closed" size={24} color="#6B7280" />
-              <TextInput
-                className="flex-1 ml-3 text-lg text-mediq-text-black"
-                placeholder="••••••••••••••••"
-                placeholderTextColor="#9CA3AF"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry = {!showPassword}
-                autoComplete="password"
-              />
-              <Pressable
-                onPress={() => setShowPassword(!showPassword)}
-                className="p-2"
-              >
-                <Ionicons 
-                  name={showPassword ? "eye" : "eye-off"} 
-                  size={24} 
-                  color="#9CA3AF" 
-                />
-              </Pressable>
-            </View>
-
-            {/* Login Button */}
+          {/* Password */}
+          <Text className="text-lg font-semibold text-mediq-text-black mb-3">
+            Password
+          </Text>
+          <View className="flex-row items-center bg-white border-2 border-mediq-light-grey rounded-2xl px-4 mb-8 h-16">
+            <Ionicons name="lock-closed" size={24} color="#6B7280" />
+            <TextInput
+              className="flex-1 ml-3 text-lg text-mediq-text-black"
+              placeholder="••••••••••••••••"
+              placeholderTextColor="#9CA3AF"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoComplete="password"
+            />
             <Pressable
-              onPress={handleLogin}
-              className="h-16 rounded-2xl bg-mediq-blue flex-row items-center justify-center active:scale-95 mb-6"
+              onPress={() => setShowPassword(!showPassword)}
+              className="p-2"
             >
-              <Text className="text-xl text-white font-bold">
-                Login
-              </Text>
+              <Ionicons
+                name={showPassword ? "eye" : "eye-off"}
+                size={24}
+                color="#9CA3AF"
+              />
             </Pressable>
           </View>
-        </SafeAreaView>
-      </View>
+
+          {/* Login Button */}
+          <Pressable
+            onPress={handleLogin}
+            className="h-16 rounded-2xl bg-mediq-blue flex-row items-center justify-center active:scale-95 mb-6"
+          >
+            <Text className="text-xl text-white font-bold">
+              Login
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 

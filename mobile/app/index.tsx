@@ -1,15 +1,26 @@
 import { Image, StatusBar, View, Text, Pressable } from "react-native";
 import { MediQImages } from "@/constants/theme";
 import * as Notifications from "expo-notifications";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { UserProvider, useUser } from "@/contexts/userContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, usePathname } from "expo-router";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/firebaseConfig";
 
 export default function WelcomeScreen() {
-  const { setUserRole, userState } = useUser();
+  const { setUserRole, userState, setDoctorStatus, setUserId } = useUser();
   const router = useRouter();
   const pathname = usePathname();
+
+  // keep latest pathname without re-triggering effects
+  const pathnameRef = useRef<string | null>(pathname);
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  // store unsubscribe so listener is attached only once
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     Notifications.setNotificationHandler({
@@ -45,7 +56,48 @@ export default function WelcomeScreen() {
           break;
       }
     }
-  }, [userState.role, userState.patientStatus,]);
+
+
+    if (userState?.role !== "doctor") {
+      // cleanup listener if role changed away from doctor
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+      return;
+    }
+
+    // if already attached, do nothing
+    if (unsubscribeRef.current) return;
+
+    if (!auth || typeof onAuthStateChanged !== "function") return;
+
+    const unsubscribe = onAuthStateChanged(auth, (doctor) => {
+      if (doctor) {
+        // navigate to the existing doctor tab (doctor/tabs/queue)
+        if (pathname === "/") {
+          router.push("/doctor/tabs/queue" as any);
+        }
+        setDoctorStatus?.("active");
+        setUserId?.(doctor.uid);
+      } else {
+        if (pathname === "/") {
+          router.push("/doctor/login" as any);
+          setDoctorStatus?.("inactive");
+        }
+      }
+    });
+
+    unsubscribeRef.current = unsubscribe;
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
+
+  }, [userState.role, userState.patientStatus, userState.doctorStatus]);
 
   const onPressPatient = async () => {
     setUserRole("patient");
