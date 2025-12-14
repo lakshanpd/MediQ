@@ -1,14 +1,4 @@
-import { Stack, useRouter } from "expo-router";
-import { TouchableOpacity, Text } from "react-native";
-
-function BackButton() {
-  const router = useRouter();
-  return (
-    <TouchableOpacity onPress={() => router.replace("/")}>
-      <Text style={{ color: "#007AFF", marginLeft: 15 }}>← Back</Text>
-    </TouchableOpacity>
-  );
-}
+import { Stack } from "expo-router";
 
 export default function PatientLayout() {
   return (
