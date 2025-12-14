@@ -3,20 +3,16 @@ import { useUser } from "@/contexts/userContext";
 import { useDoctorListener } from "@/hooks/useDoctorListener";
 import { useSessionListener } from "@/hooks/useSessionListener";
 import { useTokenListener } from "@/hooks/useTokenListener";
+import { router } from "expo-router";
 import React from "react";
-import { Image, Pressable, StatusBar, StyleSheet, Text, View, Linking } from "react-native";
+import { Image, Pressable, StatusBar, StyleSheet, Text, View, Linking, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PatientRejectedScreen() {
-  const { userState } = useUser();
+  const { userState, setPatientStatus } = useUser();
   const tokenData = useTokenListener(userState?.userData?.tokenId ?? null);
   const { sessionData } = useSessionListener(tokenData?.session_id ?? null);
   const { doctorData } = useDoctorListener(sessionData?.doctor_id ?? null);
-
-  const { resetUser } = useUser();
-  const handleRejected = async () => {
-    await resetUser();
-  };
 
   const handleContactUs = async () => {
     const supportNumber = process.env.EXPO_PUBLIC_SUPPORT_NUMBER;
@@ -31,6 +27,24 @@ export default function PatientRejectedScreen() {
     } catch (e) {
       console.error("Failed to open dialer:", e);
     }
+  };
+
+  const handleTryAgain = () => {
+    Alert.alert(
+      "Try Again",
+      "Are you sure you want to try again?",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Yes",
+          onPress: () => {
+            setPatientStatus && setPatientStatus("form");
+            router.replace({ pathname: "/patient/form" });
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   return (
@@ -120,7 +134,7 @@ export default function PatientRejectedScreen() {
         <View className="flex-row h-16 px-6 mb-6 justify-center items-center">
 
           <Pressable
-            onPress={handleRejected}
+            onPress={handleTryAgain}
             className="h-16 w-44 rounded-2xl bg-mediq-red flex-row items-center justify-center active:scale-95 mr-2">
             <Text className="text-xl text-white font-bold">
               Try Again
