@@ -171,10 +171,12 @@ export default function PatientFormScreen() {
         updated_at: new Date(),
       };
 
-      // Add document to 'tokens' collection
+      // Add document to 'tokens' collection, if fail, jump to catch block
       const docRef = await addDoc(collection(db, "tokens"), patientData);
+
       setUserData({ tokenId: docRef.id });
-      setPatientStatus("pending");
+      await setPatientStatus("pending");
+      router.replace("/patient/status/pending");
 
       // Success haptic feedback
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
