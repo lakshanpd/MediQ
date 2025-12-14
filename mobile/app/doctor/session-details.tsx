@@ -1,96 +1,191 @@
-import { useUser } from "@/contexts/userContext";
+import { useDoctor } from "@/contexts/doctorContext";
 import { db } from "@/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
-import { MediQImages } from "@/constants/theme";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { useRouter } from "expo-router";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { doc, updateDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StatusBar,
   Text,
   View,
-  Image,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function AddSessionScreen() {
-  const [sessionDate, setSessionDate] = useState(new Date());
-  const [startTime, setStartTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+// Helper to parse dates
+function getDateFromValue(v: any): Date {
+  if (!v) return new Date();
+  if (typeof v === "object" && v.seconds) {
+    return new Date(v.seconds * 1000);
+  }
+  return new Date(v);
+}
 
-  const router = useRouter();
-  const { userState } = useUser();
+// Format: "2025 Oct, 15 (Today)"
+function formatHeaderDate(dateObj: Date) {
+  const year = dateObj.getFullYear();
+  const month = dateObj.toLocaleString("default", { month: "short" });
+  const day = dateObj.getDate();
+  
+  const now = new Date();
+  const isToday =
+    dateObj.getDate() === now.getDate() &&
+    dateObj.getMonth() === now.getMonth() &&
+    dateObj.getFullYear() === now.getFullYear();
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  return `${year} ${month},${day} ${isToday ? "(Today)" : ""}`;
+}
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
+// Format: "8.00-10.30 PM"
+function formatTimeRange(start: any, end: any) {
+  const s = getDateFromValue(start);
+  const e = getDateFromValue(end);
+  const fmt = (d: Date) =>
+    d.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-  };
+  return `${fmt(s)} - ${fmt(e)}`;
+}
 
-  const handleSubmit = async () => {
+export default function SessionDetailsScreen() {
+
+  const router = useRouter();
+  const { id } = useLocalSearchParams(); // Get session ID passed from previous screen
+  const { doctorSessions, doctorTokens } = useDoctor();
+
+  // State for the toggle switch (Tokens vs Requests)
+  const [activeTab, setActiveTab] = useState<"tokens" | "requests">("tokens");
+  const session = doctorSessions?.find((s) => s.id === id);
+
+  if (!session) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <Text>Loading session...</Text>
+      </View>
+    );
+  }
+
+  // Filter tokens based on this session
+  const allSessionTokens = (doctorTokens || []).filter(
+    (t: any) => t.session_id === id || t.sessionId === id
+  );
+
+  // "Tokens" tab = Accepted status
+  const acceptedTokens = allSessionTokens.filter((t: any) => t.status === "accepted");
+  
+  // "Requests" tab = Pending status
+  const pendingTokens = allSessionTokens.filter((t: any) => t.status === "pending");
+
+  // Decide which list to show
+  const displayList = activeTab === "tokens" ? acceptedTokens : pendingTokens;
+
+    // Handle Token Action (Cancel for accepted, Accept/Reject for pending)
+  const handleTokenAction = async (tokenId: string, action: "cancel" | "accept" | "reject") => {
     try {
-      // Combine date with start and end times
-      const startDateTime = new Date(sessionDate);
-      startDateTime.setHours(
-        startTime.getHours(),
-        startTime.getMinutes(),
-        0,
-        0
-      );
+      const tokenRef = doc(db, "tokens", tokenId);
+      let newStatus = "";
+      
+      if (action === "cancel") newStatus = "rejected";
+      if (action === "accept") newStatus = "accepted";
+      if (action === "reject") newStatus = "rejected";
 
-      const endDateTime = new Date(sessionDate);
-      endDateTime.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
-
-      // Validate that end time is after start time
-      if (endDateTime <= startDateTime) {
-        Alert.alert("Invalid Time", "End time must be after start time");
-        return;
-      }
-
-      const sessionData = {
-        created_at: Timestamp.now(),
-        doctor_id: userState.userId,
-        end_time: endDateTime.toISOString(),
-        start_time: startDateTime.toISOString(),
-        status: "scheduled",
-        updated_at: Timestamp.now(),
-      };
-
-      await addDoc(collection(db, "sessions"), sessionData);
-
-      Alert.alert("Success", "Session created successfully!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      await updateDoc(tokenRef, { status: newStatus });
     } catch (error) {
-      console.error("Error creating session:", error);
-      Alert.alert("Error", "Failed to create session. Please try again.");
+      Alert.alert("Error", "Could not update token status");
     }
   };
 
+    // Handle Session Status Change
+  const handleSessionStatus = async (newStatus: string) => {
+    try {
+      const sessionRef = doc(db, "sessions", session.id);
+      await updateDoc(sessionRef, { status: newStatus });
+      Alert.alert("Success", `Session marked as ${newStatus}`);
+      if(newStatus === "completed" || newStatus === "cancelled") {
+        router.back();
+      }
+    } catch (error) {
+      Alert.alert("Error", "Could not update session");
+    }
+  };
+
+    const renderPatientCard = ({ item, index }: { item: any; index: number }) => {
+    //TODO: How queue no is handled
+    // Calculate token number (index + 1 for display)
+    const tokenNumber = (index + 1).toString().padStart(2, "0");
+
+    return (
+      <View className="bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mt-4 relative">
+        <View className="flex-row justify-between items-start mb-1">
+          <View>
+            <Text className="text-sm text-mediq-blue font-bold mb-0.5">
+              Name
+            </Text>
+            <Text className="text-base font-semibold text-mediq-text-black mb-2">
+              {item.patient.name || "Unknown Patient"}
+            </Text>
+          </View>
+          <Text className="text-2xl font-bold text-mediq-blue">
+            {tokenNumber}
+          </Text>
+        </View>
+
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <View className="mr-4 items-center">
+              <Text className="text-sm text-mediq-blue font-bold mb-0.5">
+                Age
+              </Text>
+              <Text className="text-base font-semibold text-mediq-text-black">
+                {item.patient.age || "N/A"}
+              </Text>
+            </View>
+            <View className="mr-4 items-center">
+              <Text className="text-sm text-mediq-blue font-bold mb-0.5">
+                Gender
+              </Text>
+              <Text className="text-base font-semibold text-mediq-text-black">
+                {item.patient.gender || "N/A"}
+              </Text>
+            </View>
+          </View>
+          {/* Action Button */}
+          <View className="justify-end">
+            {activeTab === "tokens" ? (
+              <Pressable
+                onPress={() => handleTokenAction(item.id, "cancel")}
+                className="bg-mediq-red px-4 py-2.5 rounded-xl active:opacity-80"
+              >
+                <Text className="text-white text-sm font-bold">Cancel</Text>
+              </Pressable>
+            ) : (
+              <View className="flex-row space-x-2">
+                <Pressable
+                  onPress={() => handleTokenAction(item.id, "reject")}
+                  className="bg-mediq-red mr-3 px-4 py-2.5 rounded-xl active:opacity-80"
+                >
+                  <Text className="text-white text-sm font-bold">Reject</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => handleTokenAction(item.id, "accept")}
+                  className="bg-mediq-green px-4 py-2.5 rounded-xl active:opacity-80"
+                >
+                  <Text className="text-white text-sm font-bold">Accept</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-white"
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
       <SafeAreaView className="flex-1">
         {/* Header */}
@@ -104,123 +199,126 @@ export default function AddSessionScreen() {
             <Ionicons name={"chevron-back"} size={24} color="#6B7280" />
           </Pressable>
           <Text className="text-2xl font-bold text-mediq-text-black ml-6">
-            Add Session
+            Session Details
           </Text>
         </View>
 
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <View className="px-6  pt-8 pb-12">
-            <View className="mb-6">
-              {/* Session Date */}
-              <Text className="text-lg font-semibold text-mediq-text-black mb-3">
-                Session Date
-              </Text>
-              <Pressable
-                onPress={() => setShowDatePicker(true)}
-                className="flex-row items-center bg-white border-2 border-mediq-light-grey rounded-2xl px-4 h-16"
-              >
-                <Ionicons name="calendar" size={24} color="#6B7280" />
-                <Text className="flex-1 ml-3 text-lg text-mediq-text-black">
-                  {formatDate(sessionDate)}
-                </Text>
-                <Ionicons
-                  name={showDatePicker ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color="#6B7280"
-                />
-              </Pressable>
+        {/* Main Card Container */}
+        <View className="flex-1 rounded-2xl border-mediq-light-blue border-2 p-4 mb-4 mx-4">
+          {/* Session Info Header */}
+          <View className="flex-row justify-between">
+            <Text className="text-2xl font-bold text-mediq-blue">
+              {formatHeaderDate(getDateFromValue(session.start_time))}
+            </Text>
+            <Text className="text-base text-mediq-text-black font-semibold mt-8">
+              {formatTimeRange(session.start_time, session.end_time)}
+            </Text>
+          </View>
 
-              {/* Date/Time Pickers */}
-              {showDatePicker && (
-                <DateTimePicker
-                  value={sessionDate}
-                  mode="date"
-                  display="inline"
-                  onChange={(event, selectedDate) => {
-                    setShowDatePicker(false);
-                    if (selectedDate) setSessionDate(selectedDate);
-                  }}
-                  minimumDate={new Date()}
-                  themeVariant="light"
-                />
-              )}
-            </View>
-            <View className="mb-6">
-              {/* Start Time */}
-              <Text className="text-lg font-semibold text-mediq-text-black mb-3">
-                Start Time
-              </Text>
-              <Pressable
-                onPress={() => setShowStartTimePicker(true)}
-                className="flex-row items-center bg-white border-2 border-mediq-light-grey rounded-2xl px-4 h-16"
-              >
-                <Ionicons name="time" size={24} color="#6B7280" />
-                <Text className="flex-1 ml-3 text-lg text-mediq-text-black">
-                  {formatTime(startTime)}
+          {/* Location */}
+          <Text className="text-lg font-medium text-mediq-light-blue -mt-2 mb-2">
+            {"Medihelp, Ratmalana"}
+            {/* {item.location || doctorMetaData?.hospital || "Medihelp, Ratmalana"} */}
+          </Text>
+
+          {/* small line */}
+          <View className="border-b border-mediq-light-blue mb-1 mx-3" />
+
+          {/* Toggle Switcher */}
+          <View className="flex-row mx-5 mt-4 mb-4 bg-white border border-gray-200 rounded-full">
+            <Pressable
+              className={`flex-1 py-2 rounded-full items-center flex-row justify-center space-x-2 ${
+                activeTab === "tokens" ? "bg-gray-100" : "bg-transparent"
+              }`}
+              onPress={() => setActiveTab("tokens")}
+            >
+              <View className="flex-row justify-start items-center ">
+                <Text className="text-lg font-bold mr-2 text-mediq-text-black">
+                  {acceptedTokens.length}
                 </Text>
-                <Ionicons
-                  name={showStartTimePicker ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color="#6B7280"
-                />
-              </Pressable>
-              {showStartTimePicker && (
-                <DateTimePicker
-                  value={startTime}
-                  mode="time"
-                  display="spinner"
-                  themeVariant="light"
-                  onChange={(event, selectedTime) => {
-                    setShowStartTimePicker(false);
-                    if (selectedTime) setStartTime(selectedTime);
-                  }}
-                />
-              )}
-            </View>
-            <View className="mb-6">
-              {/* End Time */}
-              <Text className="text-lg font-semibold text-mediq-text-black mb-3">
-                End Time
-              </Text>
-              <Pressable
-                onPress={() => setShowEndTimePicker(true)}
-                className="flex-row items-center bg-white border-2 border-mediq-light-grey rounded-2xl px-4 h-16"
-              >
-                <Ionicons name="time" size={24} color="#6B7280" />
-                <Text className="flex-1 ml-3 text-lg text-mediq-text-black">
-                  {formatTime(endTime)}
+                <Text className="text-lg font-bold text-mediq-blue">
+                  Tokens
                 </Text>
-                <Ionicons
-                  name={showDatePicker ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color="#6B7280"
-                />
-              </Pressable>
-              {showEndTimePicker && (
-                <DateTimePicker
-                  value={endTime}
-                  mode="time"
-                  display="spinner"
-                  themeVariant="light"
-                  onChange={(event, selectedTime) => {
-                    setShowEndTimePicker(false);
-                    if (selectedTime) setEndTime(selectedTime);
-                  }}
-                />
-              )}
+              </View>
+            </Pressable>
+
+            <Pressable
+              className={`flex-1 py-2 rounded-full items-center flex-row justify-center space-x-2 ${
+                activeTab === "requests" ? "bg-gray-100" : "bg-transparent"
+              }`}
+              onPress={() => setActiveTab("requests")}
+            >
+              <View className="flex-row justify-start items-center ">
+                <Text className="text-lg font-bold mr-2 text-mediq-text-black">
+                  {pendingTokens.length}
+                </Text>
+                <Text className="text-lg font-bold text-mediq-blue">
+                  Requests
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+
+          {/* List */}
+          <FlatList
+            data={displayList}
+            keyExtractor={(item) => item.id}
+            renderItem={renderPatientCard}
+            contentContainerStyle={{ paddingHorizontal: 6, paddingBottom: 10 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View className="items-center justify-center py-10">
+                <Text className="text-gray-400">No {activeTab} found</Text>
+              </View>
+            }
+          />
+
+          {/* Footer Actions */}
+          {/* TODO: handle button correctly */}
+          <View className="flex pt-6">
+            {/* small line */}
+            <View className="border-b border-mediq-light-blue mb-1 mx-3" />
+
+            <View className="flex-row py-4 justify-between">
+              <View className="flex mr-2">
+                <Pressable
+                  className="bg-mediq-yellow rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
+                  onPress={() =>
+                    Alert.alert("Edit", "Edit session functionality")
+                  }
+                >
+                  <Text className="text-white font-bold text-lg">Edit</Text>
+                </Pressable>
+              </View>
+              <View className="flex">
+                <Pressable
+                  className="bg-mediq-red rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
+                  onPress={() =>
+                    Alert.alert("Cancel Session", "Are you sure?", [
+                      { text: "No" },
+                      {
+                        text: "Yes",
+                        onPress: () => handleSessionStatus("cancelled"),
+                      },
+                    ])
+                  }
+                >
+                  <Text className="text-white font-bold text-lg">Cancel</Text>
+                </Pressable>
+              </View>
+              <View className="flex ml-2">
+                <Pressable
+                  className="flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
+                  onPress={() => handleSessionStatus("active")}
+                >
+                  <Text className="text-white font-bold text-lg">Start</Text>
+                  <Ionicons name="arrow-forward" size={20} color="white" />
+                </Pressable>
+              </View>
             </View>
           </View>
-        </ScrollView>
-
-        <View className="px-6 pb-6 ">
-          <Pressable
-            onPress={handleSubmit}
-            className="h-16 rounded-2xl bg-mediq-blue p-4 flex-row items-center justify-center active:scale-95"
-          >
-            <Text className="text-xl text-white font-bold">Create Session</Text>
-          </Pressable>
         </View>
       </SafeAreaView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
