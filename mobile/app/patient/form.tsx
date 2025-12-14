@@ -176,7 +176,11 @@ export default function PatientFormScreen() {
 
       setUserData({ tokenId: docRef.id });
       await setPatientStatus("pending");
-      router.replace("/patient/status/pending");
+      router.replace({
+        pathname: "/patient/status/pending", params: {
+          tokenId: docRef.id
+        }
+      });
 
       // Success haptic feedback
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
