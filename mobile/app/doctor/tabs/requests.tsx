@@ -1,9 +1,60 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, StatusBar } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, StatusBar, Pressable } from "react-native";
 import { db } from "@/firebaseConfig";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useDoctor } from "@/contexts/doctorContext";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+
+// Helper to parse Firestore timestamps or ISO strings
+function getDateFromValue(v: any): Date {
+  if (!v) return new Date();
+  if (typeof v === "object" && v.seconds) {
+    return new Date(v.seconds * 1000);
+  }
+  return new Date(v);
+}
+
+// Format: "Oct, 15 (Today)"
+function formatSessionDate(dateObj: Date) {
+  const now = new Date();
+  const isToday =
+    dateObj.getDate() === now.getDate() &&
+    dateObj.getMonth() === now.getMonth() &&
+    dateObj.getFullYear() === now.getFullYear();
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow =
+    dateObj.getDate() === tomorrow.getDate() &&
+    dateObj.getMonth() === tomorrow.getMonth() &&
+    dateObj.getFullYear() === tomorrow.getFullYear();
+
+  const month = dateObj.toLocaleString("default", { month: "short" });
+  const day = dateObj.getDate();
+  const dayName = dateObj.toLocaleString("default", { weekday: "long" });
+
+  let suffix = `(${dayName})`;
+  if (isToday) suffix = "(Today)";
+  if (isTomorrow) suffix = "(Tomorrow)";
+
+  return `${month},${day} ${suffix}`;
+}
+
+// Format: "8.00-10.30 PM"
+function formatSessionTimeRange(start: any, end: any) {
+  const s = getDateFromValue(start);
+  const e = getDateFromValue(end);
+
+  const formatTime = (d: Date) =>
+    d.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+  return `${formatTime(s)} - ${formatTime(e)}`;
+}
 
 function formatMaybeTimestamp(v: any) {
   if (!v) return "";
@@ -39,8 +90,10 @@ function formatDuration(start: any, end: any) {
 }
 
 export default function RequestsScreen() {
-  const { doctorSessions, doctorTokens } = useDoctor();
+  const { doctorSessions, doctorTokens, doctorMetaData } = useDoctor();
   const [updatingIds, setUpdatingIds] = React.useState<Record<string, boolean>>({});
+  const [expandedIds, setExpandedIds] = React.useState<Record<string, boolean>>({});
+
 
   async function handleAccept(tokenId: string, setUpdating: (s: Record<string, boolean>) => void | any) {
     try {
@@ -71,6 +124,23 @@ export default function RequestsScreen() {
   const nowMs = Date.now();
   // upcoming sessions: start_time > now
   const upcomingSessions = (doctorSessions ?? []).filter((s: any) => getMillisFromTimestamp(s.start_time) > nowMs);
+  const pendingTokens = (doctorTokens || []).filter(t => t.status === 'pending');
+
+  // 2. Attach session data to each token
+  const enrichedTokens = pendingTokens.map(token => {
+    const session = doctorSessions?.find(s => s.id === token.session_id || s.id === token.sessionId);
+    return {
+      ...token,
+      session
+    };
+  }).filter(item => item.session); // Remove tokens with missing sessions
+
+    // 3. Sort by session start time
+  enrichedTokens.sort((a: any, b: any) => {
+    const timeA = getDateFromValue(a.session.start_time).getTime();
+    const timeB = getDateFromValue(b.session.start_time).getTime();
+    return timeA - timeB;
+  });
 
   // map session id -> pending tokens
   const pendingTokensBySession: Record<string, any[]> = {};
@@ -81,67 +151,123 @@ export default function RequestsScreen() {
     pendingTokensBySession[String(sid)] = pendingTokensBySession[String(sid)] || [];
     pendingTokensBySession[String(sid)].push(t);
     console.log("Pending tokens for session now:", pendingTokensBySession[String(sid)]);
+
+    
   });
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const renderRequestCard = ({ item }: { item: any }) => {
+    const isExpanded = expandedIds[item.id];
+    const sessionDate = getDateFromValue(item.session.start_time);
+
+    return (
+      <View className="bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mx-4 shadow-sm border border-gray-100">
+        {/* Header: Date, Time, Chevron */}
+        <Pressable onPress={() => toggleExpand(item.id)}>
+            <View className="flex-row justify-between items-start">
+                <View className="flex-1">
+                    <Text className="text-base font-bold text-mediq-blue">
+                    {formatSessionDate(sessionDate)}
+                    </Text>
+                    <Text className="text-xs text-blue-400 mt-1">
+                    {item.session.location || doctorMetaData?.hospital || "Medihelp, Ratmalana"}
+                    </Text>
+                </View>
+                <View className="items-end">
+                    <View className="flex-row items-center">
+                        <Text className="text-xs font-medium text-mediq-text-black mr-2">
+                        {formatSessionTimeRange(item.session.start_time, item.session.end_time)}
+                        </Text>
+                        <Ionicons 
+                            name={isExpanded ? "chevron-up" : "chevron-down"} 
+                            size={20} 
+                            color="#6B7280" 
+                        />
+                    </View>
+                </View>
+            </View>
+        </Pressable>
+
+        {/* Divider */}
+        <View className="border-b border-blue-200 my-3" />
+
+        {/* Patient Info */}
+        <View className="flex-row justify-between items-start">
+            <View className="flex-1 mr-2">
+                <Text className="text-xs font-bold text-mediq-blue mb-0.5">Name</Text>
+                <Text className="text-base font-semibold text-mediq-text-black mb-2">
+                    {item.patient?.name || item.patient_name || "Unknown"}
+                </Text>
+            </View>
+            
+            <View className="flex-row space-x-6">
+                <View className="items-center">
+                    <Text className="text-xs font-bold text-mediq-blue mb-0.5">Age</Text>
+                    <Text className="text-sm font-semibold text-mediq-text-black">
+                        {item.patient?.age || item.patient_age || "N/A"}
+                    </Text>
+                </View>
+                <View className="items-center">
+                    <Text className="text-xs font-bold text-mediq-blue mb-0.5">Gender</Text>
+                    <Text className="text-sm font-semibold text-mediq-text-black">
+                        {item.patient?.gender || item.patient_gender || "N/A"}
+                    </Text>
+                </View>
+            </View>
+        </View>
+
+        {/* Expanded Content: Illness */}
+        {isExpanded && (
+            <View className="mt-2 mb-2">
+                <Text className="text-xs font-bold text-mediq-blue mb-1">Illness</Text>
+                <Text className="text-sm text-gray-600 leading-5">
+                    {item.illness_note || item.note || "No illness description provided."}
+                </Text>
+            </View>
+        )}
+
+        {/* Actions */}
+        <View className="flex-row justify-end space-x-3 mt-3">
+            <Pressable
+                onPress={() => handleReject(item.id, setUpdatingIds)}
+                className="bg-mediq-red px-5 py-2 rounded-lg active:opacity-80"
+            >
+                <Text className="text-white text-xs font-bold">Reject</Text>
+            </Pressable>
+            <Pressable
+                onPress={() => handleAccept(item.id, setUpdatingIds)}
+                className="bg-mediq-green px-5 py-2 rounded-lg active:opacity-80"
+            >
+                <Text className="text-white text-xs font-bold">Accept</Text>
+            </Pressable>
+        </View>
+      </View>
+    );
+  };
+
 
   return (
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
       <SafeAreaView className="flex-1">
-      <Text style={styles.header}>Upcoming Sessions & Requests</Text>
-
-      <FlatList
-        data={upcomingSessions}
-        keyExtractor={(s: any) => s.id}
-        contentContainerStyle={{ padding: 12 }}
-        renderItem={({ item }: { item: any }) => {
-          const sid = item.sessionId ?? item.id;
-          const tokens = pendingTokensBySession[String(sid)] ?? [];
-          return (
-            <View style={styles.sessionCard}>
-              <Text style={styles.sessionTitle}>{formatMaybeTimestamp(item.start_time)} — {formatMaybeTimestamp(item.end_time)}</Text>
-              <Text style={styles.sessionDuration}>{formatDuration(item.start_time, item.end_time)}</Text>
-
-              <View style={{ marginTop: 8 }}>
-                {tokens.length ? (
-                  tokens.map((t) => (
-                    <View key={t.id} style={styles.tokenCard}>
-                      <Text style={styles.tokenName}>{t.patient?.name ?? '(no name)'}</Text>
-                      <Text style={styles.tokenField}>Contact: {t.patient?.contact_number ?? t.contact_number ?? ''}</Text>
-                      <Text style={styles.tokenField}>Birthday: {t.patient?.birthday ?? t.birthday ?? ''}</Text>
-                      <Text style={styles.tokenField}>Note: {t.patient?.illness_note ?? t.illness_note ?? ''}</Text>
-
-                      <View style={styles.tokenActions}>
-                        <TouchableOpacity
-                          style={[styles.acceptButton, updatingIds[t.id] ? { opacity: 0.7 } : null]}
-                          disabled={!!updatingIds[t.id]}
-                          onPress={() => handleAccept(t.id, setUpdatingIds)}
-                        >
-                          <Text style={styles.actionText}>Accept</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={[styles.rejectButton, updatingIds[t.id] ? { opacity: 0.7 } : null]}
-                          disabled={!!updatingIds[t.id]}
-                          onPress={() => handleReject(t.id, setUpdatingIds)}
-                        >
-                          <Text style={styles.actionText}>Reject</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={{ color: '#666' }}>No pending tokens for this session</Text>
-                )}
-              </View>
-            </View>
-          );
-        }}
-        ListEmptyComponent={() => (
-          <View style={{ padding: 24, alignItems: 'center' }}>
-            <Text style={{ color: '#666' }}>No upcoming sessions</Text>
-          </View>
-        )}
-      />
+        <FlatList
+            data={enrichedTokens}
+            keyExtractor={(item) => item.id}
+            renderItem={renderRequestCard}
+            contentContainerStyle={{ paddingBottom: 20, paddingTop: 10 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+                <View className="items-center justify-center mt-20">
+                    <Text className="text-gray-400">No pending requests</Text>
+                </View>
+            }
+        />
       </SafeAreaView>
     </View>
   );
