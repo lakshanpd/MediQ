@@ -1,22 +1,22 @@
-import React, { use, useEffect } from "react";
+import { DoctorProvider } from "@/contexts/doctorContext";
+import { useUser } from "@/contexts/userContext";
+import { db } from "@/firebaseConfig";
+import { Doctor, Session } from "@/types";
 import { Stack, usePathname, useRouter } from "expo-router";
-import { Text, TouchableOpacity } from "react-native";
-import { Doctor, PatientFormData, Session } from "@/types";
 import {
   collection,
-  getDocs,
   CollectionReference,
-  query,
-  where,
-  limit,
-  Timestamp,
-  orderBy,
-  onSnapshot,
   DocumentData,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  Timestamp,
+  where,
 } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
-import { useUser } from "@/contexts/userContext";
-import { DoctorProvider } from "@/contexts/doctorContext";
+import React, { useEffect } from "react";
+import { Text, TouchableOpacity } from "react-native";
 
 // This layout exposes two child routes:
 // - /doctor/login (login screen)
@@ -60,42 +60,9 @@ export default function DoctorLayout() {
     }
   };
 
-  const fetchDoctorSessions = async (doctorId?: string | null) => {
-    if (!doctorId) {
-      setDoctorSessions(null);
-      return;
-    }
-
-    try {
-      const sessionsCol = collection(
-        db,
-        "sessions"
-      ) as CollectionReference<Session>;
-      const now = Timestamp.fromDate(new Date());
-      const q = query(
-        sessionsCol,
-        where("doctor_id", "==", doctorId),
-        orderBy("start_time", "asc")
-      );
-      const snap = await getDocs(q);
-
-      const sessions: Array<Session & { id: string }> = snap.docs.map(
-        (docSnap) => {
-          const data = docSnap.data() as Session;
-          return { id: docSnap.id, ...data };
-        }
-      );
-
-      setDoctorSessions(sessions.length ? sessions : []);
-    } catch (error) {
-      console.error("Error fetching sessions for doctor: ", error);
-      setDoctorSessions(null);
-    }
-  };
 
   useEffect(() => {
     fetchDoctorMetaData(userState.userId);
-    fetchDoctorSessions(userState.userId);
   }, [userState]);
 
   useEffect(() => {
@@ -123,19 +90,50 @@ export default function DoctorLayout() {
     return () => unsub();
   }, [doctorSessions]);
 
+  useEffect(() => {
+    if (!userState.userId) return;
+
+    const sessionsCol = collection(db, "sessions") as CollectionReference<Session>;
+    const q = query(
+      sessionsCol,
+      where("doctor_id", "==", userState.userId),
+      orderBy("start_time", "asc")
+    );
+
+    // Real-time listener for sessions
+    const unsubscribe = onSnapshot(
+      q,
+      (snap) => {
+        const sessions: (Session & { id: string })[] = snap.docs.map(
+          (docSnap) => {
+            const data = docSnap.data() as Session;
+            return { id: docSnap.id, ...data };
+          }
+        );
+        setDoctorSessions(sessions.length ? sessions : []);
+      },
+      (error) => {
+        console.error("Error listening to sessions:", error);
+        setDoctorSessions(null);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [userState.userId]);
+
   return (
     <DoctorProvider
       value={{
         doctorMetaData,
-        doctorSessions: doctorSessions as Array<Session & { id: string }> | null,
-        doctorTokens: doctorTokens as Array<{ id: string } & DocumentData> | null,
-        fetchDoctorMetaData,
-        fetchDoctorSessions,
+        doctorSessions: doctorSessions as (Session & { id: string })[] | null,
+        doctorTokens: doctorTokens as ({ id: string } & DocumentData)[] | null,
+        fetchDoctorMetaData
       }}
     >
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="tabs" options={{ headerShown: false }} />
+        <Stack.Screen name="add-session" options={{ headerShown: false }} />
       </Stack>
     </DoctorProvider>
   );
