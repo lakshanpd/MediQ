@@ -11,7 +11,7 @@ export default function DoctorLayout() {
         tabBarActiveTintColor: "#0564F5",
         tabBarInactiveTintColor: "#404040",
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
+          backgroundColor: "#F2F2F7",
           borderTopWidth: 1,
           borderTopColor: "#E5E7EB",
           height: 100,
@@ -32,7 +32,7 @@ export default function DoctorLayout() {
           tabBarIcon: ({ focused, color }) => (
             <Image
               source={MediQImages.navbar_icon_sessions}
-              style={{ tintColor: color, width: 28, height: 28 }}
+              style={{ tintColor: color, width: 26, height: 26 }}
             />
           ),
         }}
@@ -44,7 +44,7 @@ export default function DoctorLayout() {
           tabBarIcon: ({ focused, color }) => (
             <Image
               source={MediQImages.navbar_icon_requests}
-              style={{ tintColor: color, width: 28, height: 28}}
+              style={{ tintColor: color, width: 26, height: 26}}
             />
           ),
         }}
@@ -56,7 +56,7 @@ export default function DoctorLayout() {
           tabBarIcon: ({ focused, color }) => (
             <Image
               source={MediQImages.navbar_icon_settings}
-              style={{ tintColor: color, width: 28, height: 28 }}
+              style={{ tintColor: color, width: 26, height: 26 }}
             />
           ),
         }}
