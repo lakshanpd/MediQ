@@ -20,36 +20,6 @@ function UserRedirect() {
   // store unsubscribe so listener is attached only once
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  // routing based on userState (patient flows, etc.)
-  useEffect(() => {
-    // wait for userState to be available
-    if (!userState || !userState.role) return;
-
-    // route based on role + patient status
-    if (userState.role === "patient") {
-      switch (userState.patientStatus) {
-        case "form":
-          router.push("/patient/form");
-          break;
-        case "pending":
-          router.push("/patient/status/pending");
-          break;
-        case "accepted":
-          router.push("/patient/status/accepted");
-          break;
-        case "rejected":
-          router.push("/patient/status/rejected");
-          break;
-        default:
-          router.push("/patient/form");
-          break;
-      }
-    }
-
-    // do not handle "doctor" here — auth listener handles doctor routing
-    // deps: userState role/status only
-  }, [userState?.role, userState?.patientStatus]);
-
   // attach firebase auth listener only when role is doctor
   useEffect(() => {
     if (userState?.role !== "doctor") {
