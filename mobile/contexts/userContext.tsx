@@ -80,8 +80,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   // Set user role
-  const setUserRole = async (role: UserRole) => {
+  const setUserRole = async (role: UserRole | null) => {
     try {
+      if (!role) {
+        resetUser();
+        return;
+      }
       await AsyncStorage.setItem(STORAGE_KEYS.USER_ROLE, role);
       setUserState((prev) => ({
         ...prev,
