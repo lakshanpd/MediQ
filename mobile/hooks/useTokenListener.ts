@@ -18,7 +18,9 @@ export function useTokenListener(docId: string | null) {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [docId]);
 
   return tokenData;

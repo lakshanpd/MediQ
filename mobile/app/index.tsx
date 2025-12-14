@@ -45,13 +45,13 @@ export default function WelcomeScreen() {
           router.push("/patient/form");
           break;
         case "pending":
-          router.push("/patient");
+          router.push({ pathname: "/patient/status/pending", params: { tokenId: userState?.userData?.tokenId } });
           break;
         case "accepted":
-          router.push("/patient");
+          router.push({ pathname: "/patient/status/accepted", params: { tokenId: userState?.userData?.tokenId } });
           break;
         case "rejected":
-          router.push("/patient");
+          router.push({ pathname: "/patient/status/rejected", params: { tokenId: userState?.userData?.tokenId } });
           break;
         default:
           router.push("/patient/form");
