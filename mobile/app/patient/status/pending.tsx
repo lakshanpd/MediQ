@@ -5,10 +5,10 @@ import { useDoctorListener } from "@/hooks/useDoctorListener";
 import { useSessionListener } from "@/hooks/useSessionListener";
 import { useTokenListener } from "@/hooks/useTokenListener";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
-import React from "react";
+import React, { useEffect } from "react";
 import { Alert, Image, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 export default function PatientPendingScreen() {
   const { userState, setPatientStatus } = useUser();
@@ -52,6 +52,22 @@ export default function PatientPendingScreen() {
       { cancelable: true }
     );
   };
+
+  useEffect(() => {
+    if (tokenData?.status === "accepted") {
+      setPatientStatus && setPatientStatus("accepted");
+      router.replace({ pathname: "/patient/status/accepted", params: { tokenId } });
+    }
+    else if (tokenData?.status === "rejected") {
+      setPatientStatus && setPatientStatus("rejected");
+      router.replace({ pathname: "/patient/status/rejected", params: { tokenId } });
+    }
+    else if (tokenData?.status === "cancelled") {
+      setPatientStatus && setPatientStatus("form");
+      router.replace({ pathname: "/patient/form" });
+    }
+
+  }, [tokenData?.status]);
 
   return (
     <View className="flex-1 bg-white">

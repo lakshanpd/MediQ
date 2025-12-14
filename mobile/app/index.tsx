@@ -34,12 +34,10 @@ export default function WelcomeScreen() {
     });
 
     // wait for userState to be available
-    console.log("user role", userState.role);
     if (!userState || !userState.role) return;
 
     // only route when we are on the root path
     if (pathname === "/" && userState.role === "patient") {
-      console.log("patient state", userState.patientStatus);
       switch (userState.patientStatus) {
         case "form":
           router.push("/patient/form");
