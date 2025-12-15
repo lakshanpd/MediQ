@@ -100,9 +100,12 @@ export default function QueueScreen() {
     return getDateFromValue(a.start_time).getTime() - getDateFromValue(b.start_time).getTime();
   });
 
-  const upcomingSortedSessions = sortedSessions.filter(session => {
+  const upcomingSortedSessions = sortedSessions.filter((session) => {
     const startMs = getMillisFromTimestamp(session.start_time);
-    return startMs >= Date.now();
+    // Get start of today (00:00:00) to include sessions that happened earlier today
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    return startMs >= todayStart.getTime();
   });
 
 
@@ -121,10 +124,12 @@ export default function QueueScreen() {
     const acceptedCount = sessionTokens.filter((t: any) => t.status === "accepted").length;
 
     return (
-      <View className={'bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mt-4 relative ' +
-            (isSessionActive ? 'border-2 border-green-400' : '')}
+      <View
+        className={
+          "bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mt-4 relative " +
+          (isSessionActive ? "border-2 border-mediq-green" : "")
+        }
       >
-
         {/* Date and Time Row */}
         <View className="flex-row justify-between">
           <Text className="text-2xl font-bold text-mediq-blue">
@@ -145,19 +150,30 @@ export default function QueueScreen() {
         <View className="flex-row items-center justify-between">
           <View className="flex-row space-x-12">
             <View className="items-center mr-3 ml-4">
-              <Text className="text-xl font-bold text-mediq-text-black">{acceptedCount}</Text>
-              <Text className="text-sm font-bold text-mediq-blue">Accepted</Text>
+              <Text className="text-xl font-bold text-mediq-text-black">
+                {acceptedCount}
+              </Text>
+              <Text className="text-sm font-bold text-mediq-blue">
+                Accepted
+              </Text>
             </View>
             <View className="items-center ml-3">
-              <Text className="text-xl font-bold text-mediq-text-black">{pendingCount}</Text>
-              <Text className="text-sm font-bold text-mediq-blue">Requests</Text>
+              <Text className="text-xl font-bold text-mediq-text-black">
+                {pendingCount}
+              </Text>
+              <Text className="text-sm font-bold text-mediq-blue">
+                Requests
+              </Text>
             </View>
           </View>
 
-          <Pressable 
+          <Pressable
             onPress={() => {
-                // Navigate to details if needed, or expand
-                console.log("View session details", item.id);
+              // Pass the session ID as a parameter
+              router.push({
+                pathname: "/doctor/session-details",
+                params: { id: item.id },
+              });
             }}
           >
             <Ionicons name="chevron-forward" size={38} color="#9CA3AF" />
