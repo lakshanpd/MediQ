@@ -80,8 +80,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   // Set user role
-  const setUserRole = async (role: UserRole) => {
+  const setUserRole = async (role: UserRole | null) => {
     try {
+      if (!role) {
+        resetUser();
+        return;
+      }
       await AsyncStorage.setItem(STORAGE_KEYS.USER_ROLE, role);
       setUserState((prev) => ({
         ...prev,
@@ -170,34 +174,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       console.error("❌ Error resetting user:", error);
     }
   };
-  // Get current route based on user state
-  const getCurrentRoute = (): string => {
-    if (!userState.role) {
-      return "/";
-    }
-
-    if (userState.role === "patient") {
-      switch (userState.patientStatus) {
-        case "form":
-          return "/patient/form";
-        case "pending":
-          return "/patient/status/pending";
-        case "accepted":
-          return "/patient/status/accepted";
-        case "rejected":
-          return "/patient/status/rejected";
-        default:
-          return "/patient/form";
-      }
-    }
-
-    if (userState.role === "doctor") {
-      switch (userState.doctorStatus) {
-      }
-    }
-
-    return "/role-selection";
-  };
 
   // Computed values
   const isPatient = userState.role === "patient";
@@ -217,9 +193,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setDeviceId,
     setUserData,
     resetUser,
-    isPatient,
-    isDoctor,
-    getCurrentRoute,
   };
 
   return (

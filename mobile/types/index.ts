@@ -66,16 +66,11 @@ export interface UserContextType {
   userState: UserState;
 
   // Actions
-  setUserRole: (role: UserRole) => Promise<void>;
+  setUserRole: (role: UserRole | null) => Promise<void>;
   setPatientStatus: (status: PatientStatus) => Promise<void>;
   setDoctorStatus: (status: DoctorStatus) => Promise<void>;
   setUserId: (id: string) => Promise<void>;
   setDeviceId: (token: string) => Promise<void>;
   resetUser: () => Promise<void>;
   setUserData: (data: any) => void;
-
-  // Computed values
-  isPatient: boolean;
-  isDoctor: boolean;
-  getCurrentRoute: () => string;
 }
