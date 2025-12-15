@@ -135,6 +135,7 @@ export default function DoctorLayout() {
         <Stack.Screen name="tabs" options={{ headerShown: false }} />
         <Stack.Screen name="add-session" options={{ headerShown: false }} />
         <Stack.Screen name="session-details" options={{ headerShown: false }} />
+
       </Stack>
     </DoctorProvider>
   );
