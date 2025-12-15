@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, StatusBar, Pressable } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, FlatList, Alert, StatusBar, Pressable } from "react-native";
 import { db } from "@/firebaseConfig";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useDoctor } from "@/contexts/doctorContext";
@@ -15,30 +15,19 @@ function getDateFromValue(v: any): Date {
   return new Date(v);
 }
 
-// Format: "Oct, 15 (Today)"
-function formatSessionDate(dateObj: Date) {
+// Format: "2025 Oct, 15 (Today)"
+function formatHeaderDate(dateObj: Date) {
+  const year = dateObj.getFullYear();
+  const month = dateObj.toLocaleString("default", { month: "short" });
+  const day = dateObj.getDate();
+  
   const now = new Date();
   const isToday =
     dateObj.getDate() === now.getDate() &&
     dateObj.getMonth() === now.getMonth() &&
     dateObj.getFullYear() === now.getFullYear();
 
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const isTomorrow =
-    dateObj.getDate() === tomorrow.getDate() &&
-    dateObj.getMonth() === tomorrow.getMonth() &&
-    dateObj.getFullYear() === tomorrow.getFullYear();
-
-  const month = dateObj.toLocaleString("default", { month: "short" });
-  const day = dateObj.getDate();
-  const dayName = dateObj.toLocaleString("default", { weekday: "long" });
-
-  let suffix = `(${dayName})`;
-  if (isToday) suffix = "(Today)";
-  if (isTomorrow) suffix = "(Tomorrow)";
-
-  return `${month},${day} ${suffix}`;
+  return `${year} ${month},${day} ${isToday ? "(Today)" : ""}`;
 }
 
 // Format: "8.00-10.30 PM"
@@ -54,39 +43,6 @@ function formatSessionTimeRange(start: any, end: any) {
     });
 
   return `${formatTime(s)} - ${formatTime(e)}`;
-}
-
-function formatMaybeTimestamp(v: any) {
-  if (!v) return "";
-  if (typeof v === "object" && v.seconds) {
-    return new Date(v.seconds * 1000).toLocaleString();
-  }
-  try {
-    return new Date(v).toLocaleString();
-  } catch (e) {
-    return String(v);
-  }
-}
-
-function getMillisFromTimestamp(v: any) {
-  if (!v) return 0;
-  if (typeof v === "object") {
-    if (typeof v.toMillis === "function") return v.toMillis();
-    if (typeof v.seconds === "number") return v.seconds * 1000 + Math.floor((v.nanoseconds || 0) / 1000000);
-  }
-  const parsed = Date.parse(String(v));
-  return isNaN(parsed) ? 0 : parsed;
-}
-
-function formatDuration(start: any, end: any) {
-  const s = getMillisFromTimestamp(start);
-  const e = getMillisFromTimestamp(end);
-  if (!s || !e || e <= s) return "";
-  const diff = e - s;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(minutes / 60);
-  const remMinutes = minutes % 60;
-  return `${hours}h ${remMinutes}m`;
 }
 
 export default function RequestsScreen() {
@@ -121,12 +77,8 @@ export default function RequestsScreen() {
     }
   }
 
-  const nowMs = Date.now();
-  // upcoming sessions: start_time > now
-  const upcomingSessions = (doctorSessions ?? []).filter((s: any) => getMillisFromTimestamp(s.start_time) > nowMs);
   const pendingTokens = (doctorTokens || []).filter(t => t.status === 'pending');
 
-  // 2. Attach session data to each token
   const enrichedTokens = pendingTokens.map(token => {
     const session = doctorSessions?.find(s => s.id === token.session_id || s.id === token.sessionId);
     return {
@@ -135,7 +87,6 @@ export default function RequestsScreen() {
     };
   }).filter(item => item.session); // Remove tokens with missing sessions
 
-    // 3. Sort by session start time
   enrichedTokens.sort((a: any, b: any) => {
     const timeA = getDateFromValue(a.session.start_time).getTime();
     const timeB = getDateFromValue(b.session.start_time).getTime();
@@ -167,55 +118,56 @@ export default function RequestsScreen() {
     const sessionDate = getDateFromValue(item.session.start_time);
 
     return (
-      <View className="bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mx-4 shadow-sm border border-gray-100">
+      <View className="bg-mediq-lightest-grey rounded-2xl p-4 mb-2 mt-4 relative">
         {/* Header: Date, Time, Chevron */}
         <Pressable onPress={() => toggleExpand(item.id)}>
             <View className="flex-row justify-between items-start">
                 <View className="flex-1">
-                    <Text className="text-base font-bold text-mediq-blue">
-                    {formatSessionDate(sessionDate)}
+                    <Text className="text-xl font-bold text-mediq-blue">
+                    {formatHeaderDate(sessionDate)}
                     </Text>
-                    <Text className="text-xs text-blue-400 mt-1">
-                    {item.session.location || doctorMetaData?.hospital || "Medihelp, Ratmalana"}
+                    <Text className="text-base font-medium text-mediq-light-blue mb-2">
+                    Medihelp Ratmalana
+                    {/* {item.session.location || doctorMetaData?.hospital || "Medihelp, Ratmalana"} */}
                     </Text>
                 </View>
-                <View className="items-end">
+                <View className="items-end -mt-2">
                     <View className="flex-row items-center">
-                        <Text className="text-xs font-medium text-mediq-text-black mr-2">
+                        <Text className="text-sm text-mediq-text-black font-semibold  mt-6">
                         {formatSessionTimeRange(item.session.start_time, item.session.end_time)}
                         </Text>
                         <Ionicons 
                             name={isExpanded ? "chevron-up" : "chevron-down"} 
-                            size={20} 
-                            color="#6B7280" 
+                            size={28} 
+                            color="#9CA3AF" 
                         />
                     </View>
                 </View>
             </View>
         </Pressable>
 
-        {/* Divider */}
-        <View className="border-b border-blue-200 my-3" />
+        {/* small line */}
+        <View className="border-b border-mediq-light-blue mb-3" />
 
         {/* Patient Info */}
         <View className="flex-row justify-between items-start">
             <View className="flex-1 mr-2">
-                <Text className="text-xs font-bold text-mediq-blue mb-0.5">Name</Text>
+                <Text className="text-sm text-mediq-blue font-bold mb-0.5">Name</Text>
                 <Text className="text-base font-semibold text-mediq-text-black mb-2">
-                    {item.patient?.name || item.patient_name || "Unknown"}
+                    {item.patient.name || "Unknown Patient"}
                 </Text>
             </View>
             
             <View className="flex-row space-x-6">
-                <View className="items-center">
-                    <Text className="text-xs font-bold text-mediq-blue mb-0.5">Age</Text>
-                    <Text className="text-sm font-semibold text-mediq-text-black">
+                <View className="items-center mr-4">
+                    <Text className="text-sm text-mediq-blue font-bold mb-0.5">Age</Text>
+                    <Text className="text-base font-semibold text-mediq-text-black">
                         {item.patient?.age || item.patient_age || "N/A"}
                     </Text>
                 </View>
                 <View className="items-center">
-                    <Text className="text-xs font-bold text-mediq-blue mb-0.5">Gender</Text>
-                    <Text className="text-sm font-semibold text-mediq-text-black">
+                    <Text className="text-sm text-mediq-blue font-bold mb-0.5">Gender</Text>
+                    <Text className="text-base font-semibold text-mediq-text-black">
                         {item.patient?.gender || item.patient_gender || "N/A"}
                     </Text>
                 </View>
@@ -224,27 +176,27 @@ export default function RequestsScreen() {
 
         {/* Expanded Content: Illness */}
         {isExpanded && (
-            <View className="mt-2 mb-2">
-                <Text className="text-xs font-bold text-mediq-blue mb-1">Illness</Text>
-                <Text className="text-sm text-gray-600 leading-5">
-                    {item.illness_note || item.note || "No illness description provided."}
+            <View className="mb-2">
+                <Text className="text-sm text-mediq-blue font-bold mb-0.5">Illness</Text>
+                <Text className="text-base font-normal text-mediq-text-black">
+                    {item.patient.illness_note || "No illness description provided."}
                 </Text>
             </View>
         )}
 
         {/* Actions */}
-        <View className="flex-row justify-end space-x-3 mt-3">
+        <View className="flex-row justify-end space-x-3">
             <Pressable
                 onPress={() => handleReject(item.id, setUpdatingIds)}
-                className="bg-mediq-red px-5 py-2 rounded-lg active:opacity-80"
+                className="bg-mediq-red mr-3 px-4 py-2.5 rounded-lg active:opacity-80"
             >
-                <Text className="text-white text-xs font-bold">Reject</Text>
+                <Text className="text-white text-sm font-bold">Reject</Text>
             </Pressable>
             <Pressable
                 onPress={() => handleAccept(item.id, setUpdatingIds)}
-                className="bg-mediq-green px-5 py-2 rounded-lg active:opacity-80"
+                className="bg-mediq-green px-4 py-2.5 rounded-lg active:opacity-80"
             >
-                <Text className="text-white text-xs font-bold">Accept</Text>
+                <Text className="text-white text-sm font-bold">Accept</Text>
             </Pressable>
         </View>
       </View>
@@ -256,11 +208,12 @@ export default function RequestsScreen() {
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
       <SafeAreaView className="flex-1">
+        <View className="flex-row">
         <FlatList
             data={enrichedTokens}
             keyExtractor={(item) => item.id}
             renderItem={renderRequestCard}
-            contentContainerStyle={{ paddingBottom: 20, paddingTop: 10 }}
+            contentContainerStyle={{ paddingHorizontal: 18, paddingVertical: 22 }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
                 <View className="items-center justify-center mt-20">
@@ -268,22 +221,17 @@ export default function RequestsScreen() {
                 </View>
             }
         />
+        </View>
+        <View className="flex-row justify-end mt-4 space-x-3">
+          {/* TODO: Implement Accept All functionality */}
+            <Pressable
+                onPress={() => Alert.alert("Accept All", "Accept all functionality")}
+                className="bg-mediq-light-blue mr-4 px-8 py-2.5 rounded-lg active:opacity-80"
+            >
+                <Text className="text-white text-sm font-bold">Accept All</Text>
+            </Pressable>
+        </View>
       </SafeAreaView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f6f8fb' },
-  header: { fontSize: 20, fontWeight: '700', padding: 12 },
-  sessionCard: { backgroundColor: '#fff', borderRadius: 10, padding: 12, marginBottom: 12 },
-  sessionTitle: { fontSize: 14, fontWeight: '700' },
-  sessionDuration: { fontSize: 12, color: '#666' },
-  tokenCard: { backgroundColor: '#f9fbff', borderRadius: 8, padding: 10, marginTop: 8 },
-  tokenName: { fontWeight: '700' },
-  tokenField: { fontSize: 13, color: '#333' },
-  tokenActions: { flexDirection: 'row', marginTop: 10 },
-  acceptButton: { backgroundColor: '#2ecc71', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, marginRight: 8 },
-  rejectButton: { backgroundColor: '#ff4d4f', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
-  actionText: { color: '#fff', fontWeight: '700' },
-});
