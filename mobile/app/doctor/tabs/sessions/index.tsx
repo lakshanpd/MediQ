@@ -156,8 +156,7 @@ export default function QueueScreen() {
 
                     <Pressable
                         onPress={() => {
-                            // Navigate to details if needed, or expand
-                            console.log("View session details", item.id);
+                            router.push({ pathname: "/doctor/tabs/sessions/[id]", params: { id: item.id } });
                         }}
                     >
                         <Ionicons name="chevron-forward" size={38} color="#9CA3AF" />
