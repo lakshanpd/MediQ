@@ -76,7 +76,7 @@ export default function WelcomeScreen() {
       if (doctor) {
         // navigate to the existing doctor tab (doctor/tabs/queue)
         if (pathname === "/") {
-          router.push("/doctor/tabs/queue" as any);
+          router.push("/doctor/tabs/sessions" as any);
         }
         setDoctorStatus?.("active");
         setUserId?.(doctor.uid);

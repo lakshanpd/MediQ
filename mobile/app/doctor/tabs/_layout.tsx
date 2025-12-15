@@ -26,7 +26,7 @@ export default function DoctorLayout() {
       })}
     >
       <Tabs.Screen
-        name="queue"
+        name="sessions"
         options={{
           title: "Sessions",
           tabBarIcon: ({ focused, color }) => (
@@ -44,7 +44,7 @@ export default function DoctorLayout() {
           tabBarIcon: ({ focused, color }) => (
             <Image
               source={MediQImages.navbar_icon_requests}
-              style={{ tintColor: color, width: 26, height: 26}}
+              style={{ tintColor: color, width: 26, height: 26 }}
             />
           ),
         }}
