@@ -304,7 +304,10 @@ export default function SessionDetailsScreen() {
                             <View className="flex ml-2">
                                 <Pressable
                                     className="flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
-                                    onPress={() => handleSessionStatus("active")}
+                                    onPress={async () => {
+                                        await handleSessionStatus("active");
+                                        router.push("/doctor/tabs/sessions/current-session");
+                                    }}
                                 >
                                     <Text className="text-white font-bold text-lg">Start</Text>
                                     <Ionicons name="arrow-forward" size={20} color="white" />
