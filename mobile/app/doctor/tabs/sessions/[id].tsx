@@ -249,7 +249,11 @@ export default function SessionDetailsScreen() {
                 </View>
 
                 {/* Main Card Container */}
-                <View className="flex-1 bg-white rounded-2xl border-mediq-light-blue border-2 p-4 mb-4 mx-4">
+                <View className={`flex-1 bg-white rounded-2xl border-2 p-4 mb-4 mx-4 ${session.status === "active"
+                    ? "border-mediq-green"
+                        : session.status === "paused"
+                            ? "border-mediq-yellow"
+                            : "border-mediq-blue"}`}>
                     {/* Session Info Header */}
                     <View className="flex-row justify-between">
                         <Text className="text-2xl font-bold text-mediq-blue">
