@@ -182,6 +182,8 @@ export default function SessionDetailsScreen() {
         );
     };
 
+    const isSessionActive = session.status === "active" || session.status === "paused";
+
     return (
         <View className="flex-1 bg-white">
             <StatusBar barStyle="dark-content" />
@@ -275,6 +277,41 @@ export default function SessionDetailsScreen() {
                         <View className="border-b border-mediq-light-blue mb-1 mx-3" />
 
                         <View className="flex-row py-4 justify-between">
+                        {isSessionActive ? (
+                          // Active Session Footer
+                          <>
+                          <View className="flex mr-2">
+                            <Pressable
+                              className="bg-mediq-red rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
+                              onPress={() =>
+                                Alert.alert("Cancel Session", "Are you sure?", [
+                                  { text: "No" },
+                                  {
+                                    text: "Yes",
+                                    onPress: () => handleSessionStatus("cancelled"),
+                                  },
+                                ])
+                              }
+                            >
+                              <Text className="text-white font-bold text-lg">Cancel</Text>
+                            </Pressable>
+                          </View>
+                          <View className="flex ml-2">
+                            
+                            <Pressable
+                              className="flex-[2] flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
+                              onPress={() => router.push({
+                                pathname: "/doctor/tabs/sessions/current-session",
+                                params: { id: session.id }
+                              })}
+                            >
+                              <Text className="text-white font-bold text-lg">Manage Queue</Text>
+                              <Ionicons name="arrow-forward" size={20} color="white" />
+                            </Pressable>
+                          </View>
+                          </>
+                          ) : (
+                          <>
                             <View className="flex mr-2">
                                 <Pressable
                                     className="bg-mediq-yellow rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
@@ -313,6 +350,8 @@ export default function SessionDetailsScreen() {
                                     <Ionicons name="arrow-forward" size={20} color="white" />
                                 </Pressable>
                             </View>
+                            </>
+                          )}
                         </View>
                     </View>
                 </View>

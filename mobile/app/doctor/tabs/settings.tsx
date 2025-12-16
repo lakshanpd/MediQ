@@ -1,14 +1,25 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, StatusBar } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  Alert,
+  StatusBar,
+  Image,
+  Pressable,
+  Switch,
+} from "react-native";
 import { signOut } from "firebase/auth";
 import { auth } from "@/firebaseConfig";
 import { useUser } from "@/contexts/userContext";
 import { useDoctor } from "@/contexts/doctorContext";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MediQImages } from "@/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function SettingsScreen() {
   const { resetUser } = useUser();
   const { doctorMetaData } = useDoctor();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const handleLogout = async () => {
     try {
@@ -29,47 +40,88 @@ export default function SettingsScreen() {
     }
   };
 
+  const doctorName = doctorMetaData ? `${doctorMetaData.first_name} ${doctorMetaData.last_name}` : "Doctor";
+  const specialization = doctorMetaData?.specialization || "General Practitioner";
+  const doctorId = doctorMetaData?.id || "Unknown ID";
+
   return (
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
       <SafeAreaView className="flex-1">
-      {/* Profile card */}
-      <View style={styles.card}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {doctorMetaData
-              ? `${(doctorMetaData.first_name?.[0] ?? "").toUpperCase()}${(doctorMetaData.last_name?.[0] ?? "").toUpperCase()}`
-              : "DR"}
+
+        {/* TODO: Add a decorative background image and doctor id */}
+        {/* Profile Avatar Section */}
+        <View className="items-center mb-4 mt-10">
+          <View className="w-32 h-32 rounded-full bg-purple-100 items-center justify-center mb-3">
+            <Ionicons name="person-outline" size={60} color="#7c3aed" />
+          </View>
+
+          <Text className="text-2xl font-bold text-mediq-blue text-center">
+            {doctorName}
+          </Text>
+          <Text className="text-lg text-mediq-text-black font-medium text-center mt-1">
+            {specialization}
           </Text>
         </View>
 
-        <View style={styles.infoContainer}>
-          <Text style={styles.nameText}>
-            {doctorMetaData ? `${doctorMetaData.first_name} ${doctorMetaData.last_name}` : "(not loaded)"}
-          </Text>
-          <Text style={styles.specializationText}>{doctorMetaData?.specialization ?? "(no specialization)"}</Text>
-          <Text style={styles.idText}>{doctorMetaData ? `ID: ${doctorMetaData.id}` : ""}</Text>
-        </View>
-      </View>
+        {/* Menu Options */}
+        <View className="px-6 mt-6 space-y-4">
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
-      </TouchableOpacity>
+          {/* TODO: Add navigation to Edit Profile and Change Password screens */}
+          {/* Edit Profile */}
+          <Pressable
+            onPress={() => Alert.alert("Edit Profile", "Feature coming soon")}
+            className="flex-row mb-4 items-center justify-between bg-gray-100 p-4 rounded-2xl active:opacity-70"
+          >
+            <Text className="text-base font-bold text-mediq-text-black ml-2">
+              Edit Profile
+            </Text>
+            <Ionicons name="person-outline" size={22} color="#333" />
+          </Pressable>
+
+          {/* Change Password */}
+          <Pressable
+            onPress={() =>
+              Alert.alert("Change Password", "Feature coming soon")
+            }
+            className="flex-row mb-4 items-center justify-between bg-gray-100 p-4 rounded-2xl active:opacity-70"
+          >
+            <Text className="text-base font-bold text-mediq-text-black ml-2">
+              Change Password
+            </Text>
+            <Ionicons name="lock-closed-outline" size={22} color="#333" />
+          </Pressable>
+
+          {/* TODO: Implement actual notification settings functionality */}
+          {/* Notifications */}
+          <View className="flex-row items-center justify-between bg-gray-100 p-4 rounded-2xl">
+            <Text className="text-base font-bold text-mediq-text-black ml-2">
+              Notifications
+            </Text>
+            <Switch
+              trackColor={{ false: "#767577", true: "#60a5fa" }}
+              thumbColor={notificationsEnabled ? "#2563eb" : "#f4f3f4"}
+              ios_backgroundColor="#3e3e3e"
+              onValueChange={() => {
+                  setNotificationsEnabled(!notificationsEnabled);
+                  Alert.alert("Notifications", `Notifications turned ${!notificationsEnabled ? "ON" : "OFF"}`);
+              }}
+              value={notificationsEnabled}
+            />
+          </View>
+        </View>
+
+        {/* Logout Button - Fixed at bottom */}
+        <View className="flex-1 justify-end px-6 pt-2">
+          <Pressable
+            onPress={handleLogout}
+            className="w-full bg-mediq-blue py-4 rounded-xl flex-row items-center justify-center space-x-2 active:opacity-90"
+          >
+            <Text className="text-white text-lg font-bold">Logout</Text>
+            <Ionicons name="arrow-forward" size={20} color="white" />
+          </Pressable>
+        </View>
       </SafeAreaView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "flex-start", backgroundColor: "#f6f8fb", padding: 16 },
-  text: { fontSize: 18, fontWeight: "600", marginBottom: 20 },
-  card: { width: "100%", backgroundColor: "#fff", borderRadius: 12, padding: 16, flexDirection: "row", alignItems: "center", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#dfe7ff", alignItems: "center", justifyContent: "center", marginRight: 12 },
-  avatarText: { fontSize: 20, fontWeight: "700", color: "#2a4fff" },
-  infoContainer: { flex: 1 },
-  nameText: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
-  specializationText: { fontSize: 14, color: "#666", marginBottom: 6 },
-  idText: { fontSize: 12, color: "#999" },
-  logoutButton: { marginTop: 24, backgroundColor: "#ff3b30", paddingVertical: 12, paddingHorizontal: 28, borderRadius: 10 },
-  logoutButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-});
