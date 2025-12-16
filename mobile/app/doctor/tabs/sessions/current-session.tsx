@@ -164,6 +164,12 @@ export default function CurrentSessionScreen() {
   return (
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
+      <Image
+        source={MediQImages.main_bg_top}
+        className="absolute inset-0 w-full h-full"
+        resizeMode="cover"
+        accessible={false}
+      />
       <SafeAreaView className="flex-1">
         {/* Header */}
         <View className="flex-row items-center px-6 py-6">
@@ -179,7 +185,7 @@ export default function CurrentSessionScreen() {
         </View>
 
         <View
-          className={`flex-1 rounded-2xl border-2 p-4 mb-4 mx-4 ${session.status === "active"
+          className={`flex-1 bg-white rounded-2xl border-2 p-4 mb-4 mx-4 ${session.status === "active"
             ? "border-mediq-green"
             : "border-mediq-yellow"
             }`}
