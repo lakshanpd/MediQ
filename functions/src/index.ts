@@ -19,15 +19,26 @@ export const notifyOnTokenStatusChange = onDocumentUpdated(
     if (!before || !after) return;
 
     if (before.status === after.status) return;
+    
+    const pushToken = after.device_token;
+    if (!pushToken) return;
 
     if (before.status === "pending" && after.status === "accepted") {
-      const pushToken = after.device_token;
-      if (!pushToken) return;
-
       await sendPush(
         pushToken,
         "Token Accepted",
         "Your appointment has been accepted.",
+        {
+          tokenId: event.params.tokenId,
+          status: after.status,
+        }
+      );
+    }
+    else if (before.status === "pending" && after.status === "rejected") {
+      await sendPush(
+        pushToken,
+        "Token Rejected",
+        "Your appointment has been rejected. Please contact the clinic for further assistance.",
         {
           tokenId: event.params.tokenId,
           status: after.status,
