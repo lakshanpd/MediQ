@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, FlatList, Alert, StatusBar, Pressable, Image } from "react-native";
 import { db } from "@/firebaseConfig";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { useDoctor } from "@/contexts/doctorContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -102,10 +102,41 @@ export default function RequestsScreen() {
     if (!sid) return;
     pendingTokensBySession[String(sid)] = pendingTokensBySession[String(sid)] || [];
     pendingTokensBySession[String(sid)].push(t);
-    console.log("Pending tokens for session now:", pendingTokensBySession[String(sid)]);
+    //console.log("Pending tokens for session now:", pendingTokensBySession[String(sid)]);
 
     
   });
+
+  const handleAcceptAll = async () => {
+    Alert.alert(
+      "Accept All",
+      `Are you sure you want to accept all ${enrichedTokens.length} requests?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Yes, Accept All",
+          onPress: async () => {
+            try {
+            const batch = writeBatch(db);
+
+              enrichedTokens.forEach((token) => {
+                const tokenRef = doc(db, "tokens", token.id);
+                batch.update(tokenRef, { 
+                  status: "accepted", 
+                  updated_at: serverTimestamp() 
+                });
+              });
+
+              await batch.commit();
+            } catch (error) {
+              console.error("Error accepting all tokens:", error);
+              Alert.alert("Error", "Failed to accept all tokens");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => ({
@@ -231,9 +262,8 @@ export default function RequestsScreen() {
         </View>
         {enrichedTokens.length > 0 && (
           <View className="flex-row justify-end mt-4 space-x-3 ">
-            {/* TODO: Implement Accept All functionality */}
             <Pressable
-              onPress={() => Alert.alert("Accept All", "Accept all functionality")}
+              onPress={handleAcceptAll}
               className="bg-mediq-blue mr-4 px-8 py-2.5 rounded-lg active:opacity-80"
             >
               <Text className="text-white text-sm font-bold">Accept All</Text>
