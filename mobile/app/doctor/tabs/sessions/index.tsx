@@ -123,9 +123,6 @@ export default function QueueScreen() {
     const renderSessionCard = ({ item }: { item: any }) => {
         const startDate = getDateFromValue(item.start_time);
 
-        // Check if there's an active session if session:status = "active"
-        const isSessionActive = item.status === "active";
-
         // Filter tokens for this specific session
         const sessionTokens = (doctorTokens || []).filter(
             (t: any) => t.session_id === item.id || t.sessionId === item.id
@@ -135,10 +132,12 @@ export default function QueueScreen() {
         const acceptedCount = sessionTokens.filter((t: any) => t.status === "accepted").length;
 
         return (
-            <View className={'bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mt-4 relative ' +
-                (isSessionActive ? 'border-2 border-green-400' : '')}
-            >
-
+            <View className={`bg-mediq-lightest-grey border-2 rounded-2xl p-4 mb-4 mt-4 relative ${item.status === "active"
+              ? "border-mediq-green"
+                : item.status === "paused"
+                  ? "border-mediq-yellow"
+                  : "border-mediq-blue"
+            }`}>
                 {/* Date and Time Row */}
                 <View className="flex-row justify-between">
                     <Text className="text-2xl font-bold text-mediq-blue">
