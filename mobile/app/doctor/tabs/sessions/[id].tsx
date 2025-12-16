@@ -2,7 +2,7 @@ import { useDoctor } from "@/contexts/doctorContext";
 import { db } from "@/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import {
     Alert,
@@ -75,12 +75,28 @@ export default function SessionDetailsScreen() {
 
     // "Tokens" tab = Accepted status
     const acceptedTokens = allSessionTokens.filter((t: any) => t.status === "accepted");
+    // For active/paused sessions, also show tokens currently in progress
+    const activeSessionTokens = allSessionTokens.filter(
+        (t: any) => t.status === "accepted" || t.status === "in_progress" || t.status === "served" || t.status === "absent"
+    );
 
     // "Requests" tab = Pending status
     const pendingTokens = allSessionTokens.filter((t: any) => t.status === "pending");
 
-    // Decide which list to show
-    const displayList = activeTab === "tokens" ? acceptedTokens : pendingTokens;
+    // Active/paused sessions only show Tokens
+    const isSessionActive = session.status === "active" || session.status === "paused";
+
+    const sortByQueueNumber = (a: any, b: any) => {
+        const qa = Number(a.queue_number ?? 0);
+        const qb = Number(b.queue_number ?? 0);
+        return qa - qb;
+    };
+
+    const displayList = isSessionActive
+        ? [...activeSessionTokens].sort(sortByQueueNumber)
+        : activeTab === "tokens"
+            ? [...acceptedTokens].sort(sortByQueueNumber)
+            : [...pendingTokens].sort(sortByQueueNumber);
 
     // Handle Token Action (Cancel for accepted, Accept/Reject for pending)
     const handleTokenAction = async (tokenId: string, action: "cancel" | "accept" | "reject") => {
@@ -92,7 +108,12 @@ export default function SessionDetailsScreen() {
             if (action === "accept") newStatus = "accepted";
             if (action === "reject") newStatus = "rejected";
 
-            await updateDoc(tokenRef, { status: newStatus });
+            if (newStatus === "accepted") {
+                await updateDoc(tokenRef, { status: newStatus, queue_number: acceptedTokens.length + 1 });
+            }
+            else {
+                await updateDoc(tokenRef, { status: newStatus });
+            }
         } catch (error) {
             Alert.alert("Error", "Could not update token status");
         }
@@ -112,12 +133,27 @@ export default function SessionDetailsScreen() {
         }
     };
 
+    const handleSessionStart = async () => {
+        // add a new document to in_progress_sessions collection
+        const inProgressSessionData = {
+            session_id: session.id,
+            in_progress_queue_number: acceptedTokens[0].queue_number,
+        };
+        await addDoc(collection(db, "in_progress_sessions"), inProgressSessionData);
+
+        await handleSessionStatus("active");
+        router.push({
+            pathname: "/doctor/tabs/sessions/current-session",
+            params: { id: session.id },
+        });
+    };
+
     const renderPatientCard = ({ item, index }: { item: any; index: number }) => {
         // Calculate token number (index + 1 for display)
         const tokenNumber = (index + 1).toString().padStart(2, "0");
 
         return (
-            <View className="bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mt-4 relative">
+            <View className={`bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mt-4 relative ${item.status === "in_progress" ? "border-mediq-blue border" : ""}`}>
                 <View className="flex-row justify-between items-start mb-1">
                     <View>
                         <Text className="text-sm text-mediq-blue font-bold mb-0.5">
@@ -128,7 +164,7 @@ export default function SessionDetailsScreen() {
                         </Text>
                     </View>
                     <Text className="text-2xl font-bold text-mediq-blue">
-                        {tokenNumber}
+                        {item.queue_number}
                     </Text>
                 </View>
 
@@ -150,17 +186,18 @@ export default function SessionDetailsScreen() {
                                 {item.patient.gender || "N/A"}
                             </Text>
                         </View>
+                        <View className="mr-4 items-center">
+                            <Text className="text-sm text-mediq-blue font-bold mb-0.5">
+                                Status
+                            </Text>
+                            <Text className="text-base font-semibold text-mediq-text-black">
+                                {item.status || "N/A"}
+                            </Text>
+                        </View>
                     </View>
                     {/* Action Button */}
                     <View className="justify-end">
-                        {activeTab === "tokens" ? (
-                            <Pressable
-                                onPress={() => handleTokenAction(item.id, "cancel")}
-                                className="bg-mediq-red px-4 py-2.5 rounded-xl active:opacity-80"
-                            >
-                                <Text className="text-white text-sm font-bold">Cancel</Text>
-                            </Pressable>
-                        ) : (
+                        {activeTab === "tokens" ? null : (
                             <View className="flex-row space-x-2">
                                 <Pressable
                                     onPress={() => handleTokenAction(item.id, "reject")}
@@ -182,7 +219,6 @@ export default function SessionDetailsScreen() {
         );
     };
 
-    const isSessionActive = session.status === "active" || session.status === "paused";
 
     return (
         <View className="flex-1 bg-white">
@@ -224,38 +260,40 @@ export default function SessionDetailsScreen() {
                     {/* small line */}
                     <View className="border-b border-mediq-light-blue mb-1 mx-3" />
 
-                    {/* Toggle Switcher */}
-                    <View className="flex-row mx-5 mt-4 mb-4 bg-white border border-gray-200 rounded-full">
-                        <Pressable
-                            className={`flex-1 py-2 rounded-full items-center flex-row justify-center space-x-2 ${activeTab === "tokens" ? "bg-gray-100" : "bg-transparent"
-                                }`}
-                            onPress={() => setActiveTab("tokens")}
-                        >
-                            <View className="flex-row justify-start items-center ">
-                                <Text className="text-lg font-bold mr-2 text-mediq-text-black">
-                                    {acceptedTokens.length}
-                                </Text>
-                                <Text className="text-lg font-bold text-mediq-blue">
-                                    Tokens
-                                </Text>
-                            </View>
-                        </Pressable>
+                    {/* Toggle Switcher (hidden while active/paused) */}
+                    {!isSessionActive && (
+                        <View className="flex-row mx-5 mt-4 mb-4 bg-white border border-gray-200 rounded-full">
+                            <Pressable
+                                className={`flex-1 py-2 rounded-full items-center flex-row justify-center space-x-2 ${activeTab === "tokens" ? "bg-gray-100" : "bg-transparent"
+                                    }`}
+                                onPress={() => setActiveTab("tokens")}
+                            >
+                                <View className="flex-row justify-start items-center ">
+                                    <Text className="text-lg font-bold mr-2 text-mediq-text-black">
+                                        {acceptedTokens.length}
+                                    </Text>
+                                    <Text className="text-lg font-bold text-mediq-blue">
+                                        Tokens
+                                    </Text>
+                                </View>
+                            </Pressable>
 
-                        <Pressable
-                            className={`flex-1 py-2 rounded-full items-center flex-row justify-center space-x-2 ${activeTab === "requests" ? "bg-gray-100" : "bg-transparent"
-                                }`}
-                            onPress={() => setActiveTab("requests")}
-                        >
-                            <View className="flex-row justify-start items-center ">
-                                <Text className="text-lg font-bold mr-2 text-mediq-text-black">
-                                    {pendingTokens.length}
-                                </Text>
-                                <Text className="text-lg font-bold text-mediq-blue">
-                                    Requests
-                                </Text>
-                            </View>
-                        </Pressable>
-                    </View>
+                            <Pressable
+                                className={`flex-1 py-2 rounded-full items-center flex-row justify-center space-x-2 ${activeTab === "requests" ? "bg-gray-100" : "bg-transparent"
+                                    }`}
+                                onPress={() => setActiveTab("requests")}
+                            >
+                                <View className="flex-row justify-start items-center ">
+                                    <Text className="text-lg font-bold mr-2 text-mediq-text-black">
+                                        {pendingTokens.length}
+                                    </Text>
+                                    <Text className="text-lg font-bold text-mediq-blue">
+                                        Requests
+                                    </Text>
+                                </View>
+                            </Pressable>
+                        </View>
+                    )}
 
                     {/* List */}
                     <FlatList
@@ -266,7 +304,7 @@ export default function SessionDetailsScreen() {
                         showsVerticalScrollIndicator={false}
                         ListEmptyComponent={
                             <View className="items-center justify-center py-10">
-                                <Text className="text-gray-400">No {activeTab} found</Text>
+                                <Text className="text-gray-400">No {isSessionActive ? "tokens" : activeTab} found</Text>
                             </View>
                         }
                     />
@@ -277,81 +315,73 @@ export default function SessionDetailsScreen() {
                         <View className="border-b border-mediq-light-blue mb-1 mx-3" />
 
                         <View className="flex-row py-4 justify-between">
-                        {isSessionActive ? (
-                          // Active Session Footer
-                          <>
-                          <View className="flex mr-2">
-                            <Pressable
-                              className="bg-mediq-red rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
-                              onPress={() =>
-                                Alert.alert("Cancel Session", "Are you sure?", [
-                                  { text: "No" },
-                                  {
-                                    text: "Yes",
-                                    onPress: () => handleSessionStatus("cancelled"),
-                                  },
-                                ])
-                              }
-                            >
-                              <Text className="text-white font-bold text-lg">Cancel</Text>
-                            </Pressable>
-                          </View>
-                          <View className="flex ml-2">
-                            
-                            <Pressable
-                              className="flex-[2] flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
-                              onPress={() => router.push({
-                                pathname: "/doctor/tabs/sessions/current-session",
-                                params: { id: session.id }
-                              })}
-                            >
-                              <Text className="text-white font-bold text-lg">Manage Queue</Text>
-                              <Ionicons name="arrow-forward" size={20} color="white" />
-                            </Pressable>
-                          </View>
-                          </>
-                          ) : (
-                          <>
-                            <View className="flex mr-2">
-                                <Pressable
-                                    className="bg-mediq-yellow rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
-                                    onPress={() =>
-                                        Alert.alert("Edit", "Edit session functionality")
-                                    }
-                                >
-                                    <Text className="text-white font-bold text-lg">Edit</Text>
-                                </Pressable>
-                            </View>
-                            <View className="flex">
-                                <Pressable
-                                    className="bg-mediq-red rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
-                                    onPress={() =>
-                                        Alert.alert("Cancel Session", "Are you sure?", [
-                                            { text: "No" },
-                                            {
-                                                text: "Yes",
-                                                onPress: () => handleSessionStatus("cancelled"),
-                                            },
-                                        ])
-                                    }
-                                >
-                                    <Text className="text-white font-bold text-lg">Cancel</Text>
-                                </Pressable>
-                            </View>
-                            <View className="flex ml-2">
-                                <Pressable
-                                    className="flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
-                                    onPress={async () => {
-                                        await handleSessionStatus("active");
-                                        router.push("/doctor/tabs/sessions/current-session");
-                                    }}
-                                >
-                                    <Text className="text-white font-bold text-lg">Start</Text>
-                                    <Ionicons name="arrow-forward" size={20} color="white" />
-                                </Pressable>
-                            </View>
-                            </>
-                          )}
+                            {isSessionActive ? (
+                                // Active Session Footer
+                                <>
+                                    <View className="flex mr-2">
+                                        <Pressable
+                                            className="bg-mediq-red rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
+                                            onPress={() =>
+                                                Alert.alert("Cancel Session", "Are you sure?", [
+                                                    { text: "No" },
+                                                    {
+                                                        text: "Yes",
+                                                        onPress: () => handleSessionStatus("cancelled"),
+                                                    },
+                                                ])
+                                            }
+                                        >
+                                            <Text className="text-white font-bold text-lg">Cancel</Text>
+                                        </Pressable>
+                                    </View>
+                                    <View className="flex ml-2">
+
+                                        <Pressable
+                                            className="flex-[2] flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
+                                            onPress={() => router.push({
+                                                pathname: "/doctor/tabs/sessions/current-session",
+                                                params: { id: session.id }
+                                            })}
+                                        >
+                                            <Text className="text-white font-bold text-lg">Manage Queue</Text>
+                                            <Ionicons name="arrow-forward" size={20} color="white" />
+                                        </Pressable>
+                                    </View>
+                                </>
+                            ) : (
+                                <>
+                                    <View className="flex ml-2">
+                                        <Pressable
+                                            className="flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
+                                            onPress={() => {
+                                                if (pendingTokens.length > 0) {
+                                                    Alert.alert(
+                                                        "Pending Requests",
+                                                        "There are pending requests. Please process them before starting the session.",
+                                                        [{ text: "OK" }]
+                                                    );
+                                                    return;
+                                                }
+
+                                                Alert.alert(
+                                                    "Start Session",
+                                                    "Are you sure you want to start this session?",
+                                                    [
+                                                        { text: "No" },
+                                                        {
+                                                            text: "Yes",
+                                                            onPress: handleSessionStart,
+                                                        },
+                                                    ]
+                                                );
+                                            }}
+                                        >
+                                            <Text className="text-white font-bold text-lg">Start</Text>
+                                            <Ionicons name="arrow-forward" size={20} color="white" />
+                                        </Pressable>
+                                    </View>
+                                </>
+                            )}
                         </View>
                     </View>
                 </View>
