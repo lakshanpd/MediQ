@@ -11,8 +11,10 @@ import {
     Text,
     View,
     FlatList,
+    Image
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MediQImages } from "@/constants/theme";
 
 // Helper to parse dates
 function getDateFromValue(v: any): Date {
@@ -223,6 +225,12 @@ export default function SessionDetailsScreen() {
     return (
         <View className="flex-1 bg-white">
             <StatusBar barStyle="dark-content" />
+            <Image
+                source={MediQImages.main_bg_top}
+                className="absolute inset-0 w-full h-full"
+                resizeMode="cover"
+                accessible={false}
+            />
             <SafeAreaView className="flex-1">
                 {/* Header */}
                 <View className="flex-row items-center px-6 py-6">
@@ -240,7 +248,7 @@ export default function SessionDetailsScreen() {
                 </View>
 
                 {/* Main Card Container */}
-                <View className="flex-1 rounded-2xl border-mediq-light-blue border-2 p-4 mb-4 mx-4">
+                <View className="flex-1 bg-white rounded-2xl border-mediq-light-blue border-2 p-4 mb-4 mx-4">
                     {/* Session Info Header */}
                     <View className="flex-row justify-between">
                         <Text className="text-2xl font-bold text-mediq-blue">
