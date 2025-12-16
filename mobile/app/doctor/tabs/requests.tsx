@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, FlatList, Alert, StatusBar, Pressable } from "react-native";
+import { View, Text, StyleSheet, FlatList, Alert, StatusBar, Pressable, Image } from "react-native";
 import { db } from "@/firebaseConfig";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useDoctor } from "@/contexts/doctorContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { MediQImages } from "@/constants/theme";
 
 // Helper to parse Firestore timestamps or ISO strings
 function getDateFromValue(v: any): Date {
@@ -207,6 +208,12 @@ export default function RequestsScreen() {
   return (
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
+      <Image
+        source={MediQImages.main_bg_top}
+        className="absolute inset-0 w-full h-full"
+        resizeMode="cover"
+        accessible={false}
+      />
       <SafeAreaView className="flex-1">
         <View className="flex-row">
         <FlatList
