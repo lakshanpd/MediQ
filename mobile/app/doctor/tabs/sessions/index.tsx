@@ -215,11 +215,12 @@ export default function QueueScreen() {
 
                     <Pressable
                         onPress={() => router.push("/doctor/tabs/sessions/add-session")}
-                        className="w-20 h-20  flex items-center justify-center active:scale-95 "
+                        className="w-20 h-20  flex-row items-center justify-center mr-10 active:scale-95 "
                     >
+                        <Text className="text-2xl font-bold text-mediq-blue mr-2 mt-1">Add</Text>
                         <Image
                             source={MediQImages.session_add_icon}
-                            className="w-10 h-10 mr-5 mt-3"
+                            className="w-10 h-10"
                         />
                     </Pressable>
                 </View>
