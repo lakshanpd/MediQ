@@ -350,9 +350,9 @@ export default function SessionDetailsScreen() {
                                 </>
                             ) : (
                                 <>
-                                    <View className="flex ml-2">
+                                    <View className="flex-1">
                                         <Pressable
-                                            className="flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
+                                            className="flex-row bg-mediq-green rounded-xl py-3 items-center justify-center active:opacity-80"
                                             onPress={() => {
                                                 if (pendingTokens.length > 0) {
                                                     Alert.alert(
