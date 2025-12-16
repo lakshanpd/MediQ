@@ -188,14 +188,15 @@ export default function SessionDetailsScreen() {
                                 {item.patient.gender || "N/A"}
                             </Text>
                         </View>
-                        <View className="mr-4 items-center">
+                        {/* TODO: show status only if need */}
+                        {/* <View className="mr-4 items-center">
                             <Text className="text-sm text-mediq-blue font-bold mb-0.5">
                                 Status
                             </Text>
                             <Text className="text-base font-semibold text-mediq-text-black">
                                 {item.status || "N/A"}
                             </Text>
-                        </View>
+                        </View> */}
                     </View>
                     {/* Action Button */}
                     <View className="justify-end">
@@ -360,7 +361,7 @@ export default function SessionDetailsScreen() {
                                 <>
                                     <View className="flex-1">
                                         <Pressable
-                                            className="flex-row bg-mediq-green rounded-xl py-3 items-center justify-center active:opacity-80"
+                                            className="flex-row bg-mediq-blue rounded-xl py-3 items-center justify-center active:opacity-80"
                                             onPress={() => {
                                                 if (pendingTokens.length > 0) {
                                                     Alert.alert(
