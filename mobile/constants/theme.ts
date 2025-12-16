@@ -65,4 +65,8 @@ export const MediQImages = {
   navbar_icon_requests: require('../assets/images/navbar_icon_requests.png'),
   navbar_icon_settings: require('../assets/images/navbar_icon_settings.png'),
   session_add_icon: require('../assets/images/session_add_icon.png'),
+  queue_absent_icon: require('../assets/images/queue_absent_icon.png'),
+  queue_continue_icon: require('../assets/images/queue_continue_icon.png'),
+  queue_pause_icon: require('../assets/images/queue_pause_icon.png'),
+  queue_served_icon: require('../assets/images/queue_served_icon.png'),
 };

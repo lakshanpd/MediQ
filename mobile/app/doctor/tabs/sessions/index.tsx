@@ -190,6 +190,12 @@ export default function QueueScreen() {
     return (
         <View className="flex-1 bg-white">
             <StatusBar barStyle="dark-content" />
+            <Image
+                source={MediQImages.main_bg_top}
+                className="absolute inset-0 w-full h-full"
+                resizeMode="cover"
+                accessible={false}
+            />
             <SafeAreaView className="flex-1">
                 <View className="flex-row justify-between items-center pb-8">
                     {/* TODO: Implement month Picker */}
@@ -209,11 +215,12 @@ export default function QueueScreen() {
 
                     <Pressable
                         onPress={() => router.push("/doctor/tabs/sessions/add-session")}
-                        className="w-20 h-20  flex items-center justify-center active:scale-95 "
+                        className="w-20 h-20  flex-row items-center justify-center mr-10 active:scale-95 "
                     >
+                        <Text className="text-2xl font-bold text-mediq-blue mr-2 mt-1">Add</Text>
                         <Image
                             source={MediQImages.session_add_icon}
-                            className="w-10 h-10 mr-5 mt-3"
+                            className="w-10 h-10"
                         />
                     </Pressable>
                 </View>
