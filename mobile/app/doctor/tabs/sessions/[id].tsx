@@ -2,7 +2,7 @@ import { useDoctor } from "@/contexts/doctorContext";
 import { db } from "@/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import {
     Alert,
@@ -131,6 +131,21 @@ export default function SessionDetailsScreen() {
         } catch (error) {
             Alert.alert("Error", "Could not update session");
         }
+    };
+
+    const handleSessionStart = async () => {
+        // add a new document to in_progress_sessions collection
+        const inProgressSessionData = {
+            session_id: session.id,
+            in_progress_queue_number: acceptedTokens[0].queue_number,
+        };
+        await addDoc(collection(db, "in_progress_sessions"), inProgressSessionData);
+
+        await handleSessionStatus("active");
+        router.push({
+            pathname: "/doctor/tabs/sessions/current-session",
+            params: { id: session.id },
+        });
     };
 
     const renderPatientCard = ({ item, index }: { item: any; index: number }) => {
@@ -355,13 +370,7 @@ export default function SessionDetailsScreen() {
                                                         { text: "No" },
                                                         {
                                                             text: "Yes",
-                                                            onPress: async () => {
-                                                                await handleSessionStatus("active");
-                                                                router.push({
-                                                                    pathname: "/doctor/tabs/sessions/current-session",
-                                                                    params: { id: session.id },
-                                                                });
-                                                            },
+                                                            onPress: handleSessionStart,
                                                         },
                                                     ]
                                                 );

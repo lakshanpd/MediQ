@@ -15,12 +15,14 @@ import { useDoctorListener } from "@/hooks/useDoctorListener";
 import { useSessionListener } from "@/hooks/useSessionListener";
 import { useTokenListener } from "@/hooks/useTokenListener";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { useInProgressSessionListener } from "@/hooks/useInProgressSessionListener";
 
 export default function PatientAcceptedScreen() {
   const { userState, setPatientStatus } = useUser();
   const tokenData = useTokenListener(userState?.userData?.tokenId ?? null);
   const { sessionData } = useSessionListener(tokenData?.session_id ?? null);
   const { doctorData } = useDoctorListener(sessionData?.doctor_id ?? null);
+  const { currentQueueNumber } = useInProgressSessionListener(sessionData?.id ?? null);
 
   return (
     <View className="flex-1 bg-white">
@@ -107,12 +109,20 @@ export default function PatientAcceptedScreen() {
             </View>
 
             <View className="flex items-end justify-center -mt-10">
-              <Text className="text-sm font-bold text-mediq-blue">
-                Expected Time
-              </Text>
-              <Text className="text-lg text-mediq-text-black font-medium">
-                9.30 PM
-              </Text>
+              {currentQueueNumber !== null ? (
+                <>
+                  <Text className="text-sm font-bold text-mediq-blue">
+                    Current Queue Number
+                  </Text>
+                  <Text className="text-lg text-mediq-text-black font-medium">
+                    {currentQueueNumber ? `${currentQueueNumber}` : "Session not started"}
+                  </Text>
+                </>
+              ) : (
+                <Text className="text-sm font-bold text-mediq-blue">
+                  Session not started
+                </Text>
+              )}
             </View>
           </View>
         </View>

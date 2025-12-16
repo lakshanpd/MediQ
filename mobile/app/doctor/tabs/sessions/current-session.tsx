@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useDoctor } from "@/contexts/doctorContext";
 import { db } from "@/firebaseConfig";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, getDocs, query, CollectionReference, collection, where } from "firebase/firestore";
 import { MediQImages } from "@/constants/theme";
 
 // parse Firestore timestamp or ISO/string
@@ -93,14 +93,28 @@ export default function CurrentSessionScreen() {
 
   // mark served
   const markServed = async () => {
-    if (!currentToken) return;
+    if (!currentToken || !session) return;
     await updateTokenStatus(currentToken.id, "served");
+    // update in_progress_sessions where session_id = session.id
+    const inProgressSessionCollection = collection(db, "in_progress_sessions") as CollectionReference<any>;
+    const q = query(inProgressSessionCollection, where("session_id", "==", session.id));
+    const snap = await getDocs(q);
+    if (snap.empty) return;
+    const doc = snap.docs[0];
+    await updateDoc(doc.ref, { in_progress_queue_number: parseInt(currentToken.queue_number) + 1 });
   };
 
   // mark absent
   const markAbsent = async () => {
-    if (!currentToken) return;
+    if (!currentToken || !session) return;
     await updateTokenStatus(currentToken.id, "absent");
+    // update in_progress_sessions where session_id = session.id
+    const inProgressSessionCollection = collection(db, "in_progress_sessions") as CollectionReference<any>;
+    const q = query(inProgressSessionCollection, where("session_id", "==", session.id));
+    const snap = await getDocs(q);
+    if (snap.empty) return;
+    const doc = snap.docs[0];
+    await updateDoc(doc.ref, { in_progress_queue_number: parseInt(currentToken.queue_number) + 1 });
   };
 
   // pause / continue session
