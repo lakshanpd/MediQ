@@ -215,7 +215,7 @@ export default function RequestsScreen() {
         accessible={false}
       />
       <SafeAreaView className="flex-1">
-        <View className="flex-row">
+        <View className="flex-1">
         <FlatList
             data={enrichedTokens}
             keyExtractor={(item) => item.id}
@@ -223,21 +223,23 @@ export default function RequestsScreen() {
             contentContainerStyle={{ paddingHorizontal: 18, paddingVertical: 22 }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
-                <View className="items-center justify-center mt-20">
+                <View className="flex-1 items-center justify-center mt-20">
                     <Text className="text-gray-400">No pending requests</Text>
                 </View>
             }
         />
         </View>
-        <View className="flex-row justify-end mt-4 space-x-3">
-          {/* TODO: Implement Accept All functionality */}
+        {enrichedTokens.length > 0 && (
+          <View className="flex-row justify-end mt-4 space-x-3 ">
+            {/* TODO: Implement Accept All functionality */}
             <Pressable
-                onPress={() => Alert.alert("Accept All", "Accept all functionality")}
-                className="bg-mediq-light-blue mr-4 px-8 py-2.5 rounded-lg active:opacity-80"
+              onPress={() => Alert.alert("Accept All", "Accept all functionality")}
+              className="bg-mediq-blue mr-4 px-8 py-2.5 rounded-lg active:opacity-80"
             >
-                <Text className="text-white text-sm font-bold">Accept All</Text>
+              <Text className="text-white text-sm font-bold">Accept All</Text>
             </Pressable>
-        </View>
+          </View>
+        )}
       </SafeAreaView>
     </View>
   );
