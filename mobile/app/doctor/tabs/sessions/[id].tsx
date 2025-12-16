@@ -324,9 +324,33 @@ export default function SessionDetailsScreen() {
                                     <View className="flex ml-2">
                                         <Pressable
                                             className="flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
-                                            onPress={async () => {
-                                                await handleSessionStatus("active");
-                                                router.push("/doctor/tabs/sessions/current-session");
+                                            onPress={() => {
+                                                if (pendingTokens.length > 0) {
+                                                    Alert.alert(
+                                                        "Pending Requests",
+                                                        "There are pending requests. Please process them before starting the session.",
+                                                        [{ text: "OK" }]
+                                                    );
+                                                    return;
+                                                }
+
+                                                Alert.alert(
+                                                    "Start Session",
+                                                    "Are you sure you want to start this session?",
+                                                    [
+                                                        { text: "No" },
+                                                        {
+                                                            text: "Yes",
+                                                            onPress: async () => {
+                                                                await handleSessionStatus("active");
+                                                                router.push({
+                                                                    pathname: "/doctor/tabs/sessions/current-session",
+                                                                    params: { id: session.id },
+                                                                });
+                                                            },
+                                                        },
+                                                    ]
+                                                );
                                             }}
                                         >
                                             <Text className="text-white font-bold text-lg">Start</Text>
