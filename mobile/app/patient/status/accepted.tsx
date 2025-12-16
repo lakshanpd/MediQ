@@ -21,10 +21,6 @@ export default function PatientAcceptedScreen() {
   const tokenData = useTokenListener(userState?.userData?.tokenId ?? null);
   const { sessionData } = useSessionListener(tokenData?.session_id ?? null);
   const { doctorData } = useDoctorListener(sessionData?.doctor_id ?? null);
-  const { resetUser } = useUser();
-  const handleRejected = async () => {
-    await resetUser();
-  };
 
   return (
     <View className="flex-1 bg-white">
@@ -119,15 +115,6 @@ export default function PatientAcceptedScreen() {
               </Text>
             </View>
           </View>
-        </View>
-
-        <View className="h-16 px-6 mb-6  ">
-          <Pressable
-            onPress={handleRejected}
-            className="h-16 rounded-2xl bg-mediq-red flex-row items-center justify-center active:scale-95"
-          >
-            <Text className="text-xl text-white font-bold">Cancel</Text>
-          </Pressable>
         </View>
       </SafeAreaView>
     </View>
