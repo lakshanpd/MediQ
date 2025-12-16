@@ -77,7 +77,7 @@ export default function SessionDetailsScreen() {
     const acceptedTokens = allSessionTokens.filter((t: any) => t.status === "accepted");
     // For active/paused sessions, also show tokens currently in progress
     const activeSessionTokens = allSessionTokens.filter(
-        (t: any) => t.status === "accepted" || t.status === "in_progress"
+        (t: any) => t.status === "accepted" || t.status === "in_progress" || t.status === "served" || t.status === "absent"
     );
 
     // "Requests" tab = Pending status
@@ -85,12 +85,18 @@ export default function SessionDetailsScreen() {
 
     // Active/paused sessions only show Tokens
     const isSessionActive = session.status === "active" || session.status === "paused";
-    // Decide which list to show
+
+    const sortByQueueNumber = (a: any, b: any) => {
+        const qa = Number(a.queue_number ?? 0);
+        const qb = Number(b.queue_number ?? 0);
+        return qa - qb;
+    };
+
     const displayList = isSessionActive
-        ? activeSessionTokens
+        ? [...activeSessionTokens].sort(sortByQueueNumber)
         : activeTab === "tokens"
-            ? acceptedTokens
-            : pendingTokens;
+            ? [...acceptedTokens].sort(sortByQueueNumber)
+            : [...pendingTokens].sort(sortByQueueNumber);
 
     // Handle Token Action (Cancel for accepted, Accept/Reject for pending)
     const handleTokenAction = async (tokenId: string, action: "cancel" | "accept" | "reject") => {
@@ -132,7 +138,7 @@ export default function SessionDetailsScreen() {
         const tokenNumber = (index + 1).toString().padStart(2, "0");
 
         return (
-            <View className="bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mt-4 relative">
+            <View className={`bg-mediq-lightest-grey rounded-2xl p-4 mb-4 mt-4 relative ${item.status === "in_progress" ? "border-mediq-blue border" : ""}`}>
                 <View className="flex-row justify-between items-start mb-1">
                     <View>
                         <Text className="text-sm text-mediq-blue font-bold mb-0.5">
@@ -163,6 +169,14 @@ export default function SessionDetailsScreen() {
                             </Text>
                             <Text className="text-base font-semibold text-mediq-text-black">
                                 {item.patient.gender || "N/A"}
+                            </Text>
+                        </View>
+                        <View className="mr-4 items-center">
+                            <Text className="text-sm text-mediq-blue font-bold mb-0.5">
+                                Status
+                            </Text>
+                            <Text className="text-base font-semibold text-mediq-text-black">
+                                {item.status || "N/A"}
                             </Text>
                         </View>
                     </View>

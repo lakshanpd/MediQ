@@ -91,27 +91,16 @@ export default function CurrentSessionScreen() {
     }
   };
 
-  // advance to next token in queue
-  const goToNextToken = () => {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < queue.length) setCurrentIndex(nextIndex);
-    else {
-      Alert.alert("End of queue", "No more tokens in this session.");
-    }
-  };
-
   // mark served
   const markServed = async () => {
     if (!currentToken) return;
     await updateTokenStatus(currentToken.id, "served");
-    goToNextToken();
   };
 
   // mark absent
   const markAbsent = async () => {
     if (!currentToken) return;
     await updateTokenStatus(currentToken.id, "absent");
-    goToNextToken();
   };
 
   // pause / continue session
