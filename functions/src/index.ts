@@ -7,6 +7,7 @@ setGlobalOptions({maxInstances: 1});
 
 admin.initializeApp();
 
+// notify user when token is accepted,rejected and started to serve
 export const notifyOnTokenStatusChange = onDocumentUpdated(
   {
     document: "tokens/{tokenId}",
@@ -45,6 +46,16 @@ export const notifyOnTokenStatusChange = onDocumentUpdated(
         }
       );
     }
+    else if (after.status === "in_progress") {
+      await sendPush(
+        pushToken,
+        "It’s Your Turn",
+        "You can now meet the doctor. Please proceed.",
+        {
+          tokenId: event.params.tokenId,
+          status: after.status,
+        }
+      );
+    }
   }
 );
-
