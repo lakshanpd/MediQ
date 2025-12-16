@@ -190,6 +190,12 @@ export default function QueueScreen() {
     return (
         <View className="flex-1 bg-white">
             <StatusBar barStyle="dark-content" />
+            <Image
+                source={MediQImages.main_bg_top}
+                className="absolute inset-0 w-full h-full"
+                resizeMode="cover"
+                accessible={false}
+            />
             <SafeAreaView className="flex-1">
                 <View className="flex-row justify-between items-center pb-8">
                     {/* TODO: Implement month Picker */}
