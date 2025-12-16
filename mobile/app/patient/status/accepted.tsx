@@ -106,7 +106,7 @@ export default function PatientAcceptedScreen() {
                 Your Token Number
               </Text>
               <Text className="text-8xl text-mediq-blue font-semibold mt-3">
-                28
+                {tokenData?.queue_number ?? "Error"}
               </Text>
             </View>
 
