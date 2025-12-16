@@ -92,7 +92,12 @@ export default function SessionDetailsScreen() {
             if (action === "accept") newStatus = "accepted";
             if (action === "reject") newStatus = "rejected";
 
-            await updateDoc(tokenRef, { status: newStatus });
+            if (newStatus === "accepted") {
+                await updateDoc(tokenRef, { status: newStatus, queue_number: acceptedTokens.length + 1 });
+            }
+            else {
+                await updateDoc(tokenRef, { status: newStatus });
+            }
         } catch (error) {
             Alert.alert("Error", "Could not update token status");
         }
@@ -277,81 +282,81 @@ export default function SessionDetailsScreen() {
                         <View className="border-b border-mediq-light-blue mb-1 mx-3" />
 
                         <View className="flex-row py-4 justify-between">
-                        {isSessionActive ? (
-                          // Active Session Footer
-                          <>
-                          <View className="flex mr-2">
-                            <Pressable
-                              className="bg-mediq-red rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
-                              onPress={() =>
-                                Alert.alert("Cancel Session", "Are you sure?", [
-                                  { text: "No" },
-                                  {
-                                    text: "Yes",
-                                    onPress: () => handleSessionStatus("cancelled"),
-                                  },
-                                ])
-                              }
-                            >
-                              <Text className="text-white font-bold text-lg">Cancel</Text>
-                            </Pressable>
-                          </View>
-                          <View className="flex ml-2">
-                            
-                            <Pressable
-                              className="flex-[2] flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
-                              onPress={() => router.push({
-                                pathname: "/doctor/tabs/sessions/current-session",
-                                params: { id: session.id }
-                              })}
-                            >
-                              <Text className="text-white font-bold text-lg">Manage Queue</Text>
-                              <Ionicons name="arrow-forward" size={20} color="white" />
-                            </Pressable>
-                          </View>
-                          </>
-                          ) : (
-                          <>
-                            <View className="flex mr-2">
-                                <Pressable
-                                    className="bg-mediq-yellow rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
-                                    onPress={() =>
-                                        Alert.alert("Edit", "Edit session functionality")
-                                    }
-                                >
-                                    <Text className="text-white font-bold text-lg">Edit</Text>
-                                </Pressable>
-                            </View>
-                            <View className="flex">
-                                <Pressable
-                                    className="bg-mediq-red rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
-                                    onPress={() =>
-                                        Alert.alert("Cancel Session", "Are you sure?", [
-                                            { text: "No" },
-                                            {
-                                                text: "Yes",
-                                                onPress: () => handleSessionStatus("cancelled"),
-                                            },
-                                        ])
-                                    }
-                                >
-                                    <Text className="text-white font-bold text-lg">Cancel</Text>
-                                </Pressable>
-                            </View>
-                            <View className="flex ml-2">
-                                <Pressable
-                                    className="flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
-                                    onPress={async () => {
-                                        await handleSessionStatus("active");
-                                        router.push("/doctor/tabs/sessions/current-session");
-                                    }}
-                                >
-                                    <Text className="text-white font-bold text-lg">Start</Text>
-                                    <Ionicons name="arrow-forward" size={20} color="white" />
-                                </Pressable>
-                            </View>
-                            </>
-                          )}
+                            {isSessionActive ? (
+                                // Active Session Footer
+                                <>
+                                    <View className="flex mr-2">
+                                        <Pressable
+                                            className="bg-mediq-red rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
+                                            onPress={() =>
+                                                Alert.alert("Cancel Session", "Are you sure?", [
+                                                    { text: "No" },
+                                                    {
+                                                        text: "Yes",
+                                                        onPress: () => handleSessionStatus("cancelled"),
+                                                    },
+                                                ])
+                                            }
+                                        >
+                                            <Text className="text-white font-bold text-lg">Cancel</Text>
+                                        </Pressable>
+                                    </View>
+                                    <View className="flex ml-2">
+
+                                        <Pressable
+                                            className="flex-[2] flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
+                                            onPress={() => router.push({
+                                                pathname: "/doctor/tabs/sessions/current-session",
+                                                params: { id: session.id }
+                                            })}
+                                        >
+                                            <Text className="text-white font-bold text-lg">Manage Queue</Text>
+                                            <Ionicons name="arrow-forward" size={20} color="white" />
+                                        </Pressable>
+                                    </View>
+                                </>
+                            ) : (
+                                <>
+                                    <View className="flex mr-2">
+                                        <Pressable
+                                            className="bg-mediq-yellow rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
+                                            onPress={() =>
+                                                Alert.alert("Edit", "Edit session functionality")
+                                            }
+                                        >
+                                            <Text className="text-white font-bold text-lg">Edit</Text>
+                                        </Pressable>
+                                    </View>
+                                    <View className="flex">
+                                        <Pressable
+                                            className="bg-mediq-red rounded-xl px-6 py-3 items-center justify-center active:opacity-80"
+                                            onPress={() =>
+                                                Alert.alert("Cancel Session", "Are you sure?", [
+                                                    { text: "No" },
+                                                    {
+                                                        text: "Yes",
+                                                        onPress: () => handleSessionStatus("cancelled"),
+                                                    },
+                                                ])
+                                            }
+                                        >
+                                            <Text className="text-white font-bold text-lg">Cancel</Text>
+                                        </Pressable>
+                                    </View>
+                                    <View className="flex ml-2">
+                                        <Pressable
+                                            className="flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
+                                            onPress={async () => {
+                                                await handleSessionStatus("active");
+                                                router.push("/doctor/tabs/sessions/current-session");
+                                            }}
+                                        >
+                                            <Text className="text-white font-bold text-lg">Start</Text>
+                                            <Ionicons name="arrow-forward" size={20} color="white" />
+                                        </Pressable>
+                                    </View>
+                                </>
+                            )}
                         </View>
                     </View>
                 </View>
