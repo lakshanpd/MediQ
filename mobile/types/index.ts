@@ -35,7 +35,7 @@ export interface Session {
   doctor_id: string;
   start_time: Date; // UTC timestamp
   end_time: Date; // UTC timestamp
-  status: "scheduled" | "active" | "ended" | "cancelled";
+  status: "scheduled" | "active" | "ended" | "cancelled" | "paused";
   created_at: Date;
   updated_at: Date;
 }
