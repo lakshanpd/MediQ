@@ -1,5 +1,5 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebaseConfig";
+import { auth, db } from "../../firebaseConfig";
 import React, { use, useEffect, useState } from "react";
 import {
   View,
@@ -16,6 +16,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { MediQImages } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import { useUser } from "@/contexts/userContext";
+import { getExpoPushToken } from "@/utils/getExpoPushToken";
+import { collection, getDocs, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 
 
 export default function DoctorLoginScreen() {
@@ -25,8 +27,46 @@ export default function DoctorLoginScreen() {
   const router = useRouter();
   const { setUserRole } = useUser();
 
-  const handleLogin = async () =>
-    await signInWithEmailAndPassword(auth, email, password);
+const handleLogin = async () => {
+  try {
+    // 1. Sign in
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    const uid = userCredential.user.uid;
+
+    // 2. Get Expo push token
+    const device_token = await getExpoPushToken();
+    if (!device_token) return;
+
+    // 3. Query doctor by uid field
+    const q = query(
+      collection(db, "doctors"),
+      where("uid", "==", uid)
+    );
+
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      console.warn("No doctor document found for UID:", uid);
+      return;
+    }
+
+    // 4. Update matched doctor document
+    const doctorDocRef = snap.docs[0].ref;
+
+    await updateDoc(doctorDocRef, {
+      device_token,
+      updated_at: serverTimestamp(),
+    });
+  } catch (err) {
+    console.error("Login or update failed:", err);
+  }
+};
+   
 
   return (
     <View className="flex-1 bg-white">
