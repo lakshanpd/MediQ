@@ -24,12 +24,75 @@ export const notifyOnTokenStatusChange = onDocumentUpdated(
 
     if (!before || !after) return;
 
+    // only react to status change
     if (before.status === after.status) return;
 
     const pushToken = after.device_token;
     if (!pushToken) return;
 
-    if (after.status === "accepted") {
+    // ----------------------------
+    // STATUS: IN PROGRESS
+    // ----------------------------
+    if (after.status === "in_progress") {
+      // notify current patient
+      await sendPush(
+        pushToken,
+        "It’s Your Turn",
+        "You can now meet the doctor. Please proceed.",
+        {
+          tokenId: event.params.tokenId,
+          sessionId: after.session_id,
+          status: after.status,
+        }
+      );
+
+      const currentQueueNumber = after.queue_number;
+      const sessionId = after.session_id;
+
+      if (
+        typeof currentQueueNumber !== "number" ||
+        !sessionId
+      ) {
+        return;
+      }
+
+      const nextQueueNumber = currentQueueNumber + 1;
+
+      // 🔎 find next patient IN SAME SESSION
+      const nextTokenSnap = await db
+        .collection("tokens")
+        .where("session_id", "==", sessionId)
+        .where("queue_number", "==", nextQueueNumber)
+        .where("status", "==", "accepted") // recommended
+        .limit(1)
+        .get();
+
+      if (nextTokenSnap.empty) return;
+
+      const nextTokenDoc = nextTokenSnap.docs[0];
+      const nextTokenData = nextTokenDoc.data();
+
+      const nextDeviceToken = nextTokenData?.device_token;
+      if (!nextDeviceToken) return;
+
+      // notify next patient
+      await sendPush(
+        nextDeviceToken,
+        "Get Ready ⏳",
+        "Only one patient is ahead of you. Please be ready.",
+        {
+          tokenId: nextTokenDoc.id,
+          sessionId,
+          queue_number: nextQueueNumber,
+          type: "NEXT_PATIENT_ALERT",
+        }
+      );
+    }
+
+    // ----------------------------
+    // STATUS: ACCEPTED
+    // ----------------------------
+    else if (after.status === "accepted") {
       await sendPush(
         pushToken,
         "Token Accepted",
@@ -39,22 +102,17 @@ export const notifyOnTokenStatusChange = onDocumentUpdated(
           status: after.status,
         }
       );
-    } else if (after.status === "rejected") {
+    }
+
+    // ----------------------------
+    // STATUS: REJECTED
+    // ----------------------------
+    else if (after.status === "rejected") {
       await sendPush(
         pushToken,
         "Token Rejected",
         "Your appointment has been rejected. Please contact the clinic " +
-        "for further assistance.",
-        {
-          tokenId: event.params.tokenId,
-          status: after.status,
-        }
-      );
-    } else if (after.status === "in_progress") {
-      await sendPush(
-        pushToken,
-        "It’s Your Turn",
-        "You can now meet the doctor. Please proceed.",
+          "for further assistance.",
         {
           tokenId: event.params.tokenId,
           status: after.status,
@@ -149,12 +207,6 @@ export const notifyDoctorBeforeSessionTimes = onSchedule(
         (endMillis - nowMillis) / (60 * 1000)
       );
 
-      // debugging
-      if (session.doctor_id === "rxYJvto2IXWV4eGshMi158KoklD3") {
-        console.log("minutesToStart", minutesToStart);
-        console.log("minutesToEnd", minutesToEnd);
-      }
-
       // fetch doctor using uid field
       const doctorQuery = await db
         .collection("doctors")
@@ -162,18 +214,15 @@ export const notifyDoctorBeforeSessionTimes = onSchedule(
         .limit(1)
         .get();
 
-      console.log("doctorQuery", doctorQuery);
-
       if (doctorQuery.empty) continue;
 
       const doctorData = doctorQuery.docs[0].data();
       const deviceToken = doctorData?.device_token;
-      console.log("deviceToken", deviceToken);
+
       if (!deviceToken) continue;
 
       // 🔔 30 minutes BEFORE session START
       if (minutesToStart <= 30 && !session.notified_start_30min) {
-        console.log("sending notification to push token", deviceToken);
         await sendPush(
           deviceToken,
           "Upcoming Session ⏰",
@@ -184,7 +233,6 @@ export const notifyDoctorBeforeSessionTimes = onSchedule(
           }
         );
 
-        console.log("updated notified_start_30min");
         await sessionDoc.ref.update({
           notified_start_30min: true,
         });
@@ -192,7 +240,6 @@ export const notifyDoctorBeforeSessionTimes = onSchedule(
 
       // 🔔 10 minutes BEFORE session END
       if (minutesToEnd <= 10 && !session.notified_end_10min) {
-        console.log("sending notification to push token", deviceToken);
         await sendPush(
           deviceToken,
           "Session Ending Soon ⏳",
@@ -203,7 +250,6 @@ export const notifyDoctorBeforeSessionTimes = onSchedule(
           }
         );
 
-        console.log("updated notified_end_10min");
         await sessionDoc.ref.update({
           notified_end_10min: true,
         });
