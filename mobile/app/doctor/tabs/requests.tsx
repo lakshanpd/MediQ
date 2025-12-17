@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, FlatList, Alert, StatusBar, Pressable } from "react-native";
+import { View, Text, StyleSheet, FlatList, Alert, StatusBar, Pressable, Image } from "react-native";
 import { db } from "@/firebaseConfig";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { useDoctor } from "@/contexts/doctorContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { MediQImages } from "@/constants/theme";
 
 // Helper to parse Firestore timestamps or ISO strings
 function getDateFromValue(v: any): Date {
@@ -101,10 +102,41 @@ export default function RequestsScreen() {
     if (!sid) return;
     pendingTokensBySession[String(sid)] = pendingTokensBySession[String(sid)] || [];
     pendingTokensBySession[String(sid)].push(t);
-    console.log("Pending tokens for session now:", pendingTokensBySession[String(sid)]);
+    //console.log("Pending tokens for session now:", pendingTokensBySession[String(sid)]);
 
     
   });
+
+  const handleAcceptAll = async () => {
+    Alert.alert(
+      "Accept All",
+      `Are you sure you want to accept all ${enrichedTokens.length} requests?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Yes, Accept All",
+          onPress: async () => {
+            try {
+            const batch = writeBatch(db);
+
+              enrichedTokens.forEach((token) => {
+                const tokenRef = doc(db, "tokens", token.id);
+                batch.update(tokenRef, { 
+                  status: "accepted", 
+                  updated_at: serverTimestamp() 
+                });
+              });
+
+              await batch.commit();
+            } catch (error) {
+              console.error("Error accepting all tokens:", error);
+              Alert.alert("Error", "Failed to accept all tokens");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => ({
@@ -207,8 +239,14 @@ export default function RequestsScreen() {
   return (
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
+      <Image
+        source={MediQImages.main_bg_top}
+        className="absolute inset-0 w-full h-full"
+        resizeMode="cover"
+        accessible={false}
+      />
       <SafeAreaView className="flex-1">
-        <View className="flex-row">
+        <View className="flex-1">
         <FlatList
             data={enrichedTokens}
             keyExtractor={(item) => item.id}
@@ -216,21 +254,22 @@ export default function RequestsScreen() {
             contentContainerStyle={{ paddingHorizontal: 18, paddingVertical: 22 }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
-                <View className="items-center justify-center mt-20">
+                <View className="flex-1 items-center justify-center mt-20">
                     <Text className="text-gray-400">No pending requests</Text>
                 </View>
             }
         />
         </View>
-        <View className="flex-row justify-end mt-4 space-x-3">
-          {/* TODO: Implement Accept All functionality */}
+        {enrichedTokens.length > 0 && (
+          <View className="flex-row justify-end mt-4 space-x-3 ">
             <Pressable
-                onPress={() => Alert.alert("Accept All", "Accept all functionality")}
-                className="bg-mediq-light-blue mr-4 px-8 py-2.5 rounded-lg active:opacity-80"
+              onPress={handleAcceptAll}
+              className="bg-mediq-blue mr-4 px-8 py-2.5 rounded-lg active:opacity-80"
             >
-                <Text className="text-white text-sm font-bold">Accept All</Text>
+              <Text className="text-white text-sm font-bold">Accept All</Text>
             </Pressable>
-        </View>
+          </View>
+        )}
       </SafeAreaView>
     </View>
   );

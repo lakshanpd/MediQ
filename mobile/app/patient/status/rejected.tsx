@@ -70,7 +70,7 @@ export default function PatientRejectedScreen() {
 
         </View>
         <View className="flex-1 ">
-          <View className="bg-mediq-lightest-grey rounded-2xl p-6 mx-6 mt-2 mb-6">
+          <View className="bg-mediq-light-red rounded-2xl p-6 mx-6 mt-2 mb-6">
             <Text className="text-2xl font-bold text-mediq-blue ">
               Dr. {doctorData?.first_name || 'Loading...'} {doctorData?.last_name || ''}
             </Text>

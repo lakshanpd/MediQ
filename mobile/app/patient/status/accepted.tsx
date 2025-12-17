@@ -42,11 +42,15 @@ export default function PatientAcceptedScreen() {
             resizeMode="contain"
           />
           <Text className="text-2xl font-bold text-mediq-blue text-center mx-8 ">
-            Your token has been Accepted
+            {sessionData?.status === "scheduled"
+              ? "Your token has been Accepted"
+              : "Your Session has Started"}
           </Text>
         </View>
         <View className="flex-1 ">
-          <View className="bg-mediq-lightest-grey rounded-2xl p-6 mx-6 mt-2 mb-6">
+          <View className={`rounded-2xl p-6 mx-6 mt-2 mb-6 ${sessionData?.status === "scheduled" 
+            ? "bg-mediq-lightest-blue"
+            : "bg-mediq-light-green"}`}>
             <Text className="text-2xl font-bold text-mediq-blue ">
               Dr. {doctorData?.first_name || "Loading..."}{" "}
               {doctorData?.last_name || ""}
@@ -99,30 +103,33 @@ export default function PatientAcceptedScreen() {
             </View>
             <View className="border-b border-mediq-blue mb-2" />
 
-            <View className="flex items-center justify-center mt-2">
-              <Text className="text-md font-bold text-mediq-blue">
+            <View className="flex-row justify-center mt-2  ">
+              {sessionData?.status === "active" || sessionData?.status === "paused" ? (
+            <View className="flex items-center justify-center mt-2 mr-4">
+              <Text className="text-sm font-bold text-mediq-text-black">
+                Current Token Number
+              </Text>
+              <Text className="text-8xl text-mediq-text-black font-semibold mt-3">
+                {currentQueueNumber ? `${currentQueueNumber}` : "--"}
+              </Text>
+            </View>
+              ) : null}
+            <View className="flex items-center justify-center mt-2 ml-4">
+              <Text className="text-sm font-bold text-mediq-blue">
                 Your Token Number
               </Text>
               <Text className="text-8xl text-mediq-blue font-semibold mt-3">
-                {tokenData?.queue_number ?? "Error"}
+                {tokenData?.queue_number ?? "--"}
               </Text>
             </View>
+            </View>
 
-            <View className="flex items-end justify-center -mt-10">
-              {currentQueueNumber !== null ? (
-                <>
-                  <Text className="text-sm font-bold text-mediq-blue">
-                    Current Queue Number
-                  </Text>
-                  <Text className="text-lg text-mediq-text-black font-medium">
-                    {currentQueueNumber ? `${currentQueueNumber}` : "Session not started"}
-                  </Text>
-                </>
-              ) : (
-                <Text className="text-sm font-bold text-mediq-blue">
+            <View className="flex items-end justify-center mt-1">
+              {sessionData?.status === "scheduled" ? (
+                <Text className="text-base font-bold text-mediq-blue">
                   Session not started
                 </Text>
-              )}
+              ) : null}
             </View>
 
           </View>

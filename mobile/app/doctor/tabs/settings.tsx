@@ -47,9 +47,15 @@ export default function SettingsScreen() {
   return (
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
+      <Image
+        source={MediQImages.main_bg_top}
+        className="absolute inset-0 w-full h-full"
+        resizeMode="cover"
+        accessible={false}
+      />
       <SafeAreaView className="flex-1">
 
-        {/* TODO: Add a decorative background image and doctor id */}
+        {/* TODO: Add a decorative background image */}
         {/* Profile Avatar Section */}
         <View className="items-center mb-4 mt-10">
           <View className="w-32 h-32 rounded-full bg-purple-100 items-center justify-center mb-3">
@@ -61,6 +67,9 @@ export default function SettingsScreen() {
           </Text>
           <Text className="text-lg text-mediq-text-black font-medium text-center mt-1">
             {specialization}
+          </Text>
+          <Text className="text-sm text-mediq-dark-grey mt-1">
+            ID: {doctorId}
           </Text>
         </View>
 
