@@ -1,5 +1,8 @@
 import {setGlobalOptions} from "firebase-functions";
-import {onDocumentCreated, onDocumentUpdated} from "firebase-functions/v2/firestore";
+import {
+  onDocumentCreated,
+  onDocumentUpdated,
+} from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import {sendPush} from "./push";
 
@@ -21,7 +24,7 @@ export const notifyOnTokenStatusChange = onDocumentUpdated(
     if (!before || !after) return;
 
     if (before.status === after.status) return;
-    
+
     const pushToken = after.device_token;
     if (!pushToken) return;
 
@@ -35,19 +38,18 @@ export const notifyOnTokenStatusChange = onDocumentUpdated(
           status: after.status,
         }
       );
-    }
-    else if (after.status === "rejected") {
+    } else if (after.status === "rejected") {
       await sendPush(
         pushToken,
         "Token Rejected",
-        "Your appointment has been rejected. Please contact the clinic for further assistance.",
+        "Your appointment has been rejected. Please contact the clinic " +
+        "for further assistance.",
         {
           tokenId: event.params.tokenId,
           status: after.status,
         }
       );
-    }
-    else if (after.status === "in_progress") {
+    } else if (after.status === "in_progress") {
       await sendPush(
         pushToken,
         "It’s Your Turn",
@@ -90,7 +92,7 @@ export const notifyDoctorOnNewRequest = onDocumentCreated(
       .get();
 
     if (doctorQuery.empty) return;
-    
+
 
     const doctorDoc = doctorQuery.docs[0];
     const doctorData = doctorDoc.data();
@@ -102,7 +104,8 @@ export const notifyDoctorOnNewRequest = onDocumentCreated(
     await sendPush(
       deviceToken,
       "New Appointment Request 📩",
-      "A new patient request has been received. Please review it.",
+      "A new patient request has been received. " +
+      "Please review it.",
       {
         tokenId: event.params.tokenId,
         sessionId,
@@ -112,4 +115,5 @@ export const notifyDoctorOnNewRequest = onDocumentCreated(
   }
 );
 
-// notify doctor when session starts in 30 minutes and end in 10 minutes ---> onSchedule (check every minute)
+// notify doctor when session starts in 30 minutes
+// and end in 10 minutes ---> onSchedule (check every minute)
