@@ -1,3 +1,4 @@
+import { MediQImages } from "@/constants/theme";
 import { useUser } from "@/contexts/userContext";
 import { db } from "@/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +15,7 @@ import {
     StatusBar,
     Text,
     View,
+    Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -90,6 +92,12 @@ export default function AddSessionScreen() {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
             <StatusBar barStyle="dark-content" />
+            <Image
+                source={MediQImages.main_bg_top}
+                className="absolute inset-0 w-full h-full"
+                resizeMode="cover"
+                accessible={false}
+            />
             <SafeAreaView className="flex-1">
                 {/* Header */}
                 <View className="flex-row items-center px-6 py-6">

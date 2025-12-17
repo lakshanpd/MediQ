@@ -11,8 +11,10 @@ import {
     Text,
     View,
     FlatList,
+    Image
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MediQImages } from "@/constants/theme";
 
 // Helper to parse dates
 function getDateFromValue(v: any): Date {
@@ -186,14 +188,15 @@ export default function SessionDetailsScreen() {
                                 {item.patient.gender || "N/A"}
                             </Text>
                         </View>
-                        <View className="mr-4 items-center">
+                        {/* TODO: show status only if need */}
+                        {/* <View className="mr-4 items-center">
                             <Text className="text-sm text-mediq-blue font-bold mb-0.5">
                                 Status
                             </Text>
                             <Text className="text-base font-semibold text-mediq-text-black">
                                 {item.status || "N/A"}
                             </Text>
-                        </View>
+                        </View> */}
                     </View>
                     {/* Action Button */}
                     <View className="justify-end">
@@ -223,6 +226,12 @@ export default function SessionDetailsScreen() {
     return (
         <View className="flex-1 bg-white">
             <StatusBar barStyle="dark-content" />
+            <Image
+                source={MediQImages.main_bg_top}
+                className="absolute inset-0 w-full h-full"
+                resizeMode="cover"
+                accessible={false}
+            />
             <SafeAreaView className="flex-1">
                 {/* Header */}
                 <View className="flex-row items-center px-6 py-6">
@@ -240,7 +249,11 @@ export default function SessionDetailsScreen() {
                 </View>
 
                 {/* Main Card Container */}
-                <View className="flex-1 rounded-2xl border-mediq-light-blue border-2 p-4 mb-4 mx-4">
+                <View className={`flex-1 bg-white rounded-2xl border-2 p-4 mb-4 mx-4 ${session.status === "active"
+                    ? "border-mediq-green"
+                        : session.status === "paused"
+                            ? "border-mediq-yellow"
+                            : "border-mediq-blue"}`}>
                     {/* Session Info Header */}
                     <View className="flex-row justify-between">
                         <Text className="text-2xl font-bold text-mediq-blue">
@@ -350,9 +363,9 @@ export default function SessionDetailsScreen() {
                                 </>
                             ) : (
                                 <>
-                                    <View className="flex ml-2">
+                                    <View className="flex-1">
                                         <Pressable
-                                            className="flex-row bg-mediq-blue rounded-xl px-12 py-3 items-center justify-center space-x-2 active:opacity-80"
+                                            className="flex-row bg-mediq-blue rounded-xl py-3 items-center justify-center active:opacity-80"
                                             onPress={() => {
                                                 if (pendingTokens.length > 0) {
                                                     Alert.alert(

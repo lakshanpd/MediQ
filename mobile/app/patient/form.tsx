@@ -24,6 +24,8 @@ import { db } from "../../firebaseConfig";
 export default function PatientFormScreen() {
   const router = useRouter();
 
+  const [step, setStep] = useState<1 | 2>(1);
+
   const [doctors, setDoctors] = useState<
     { id: string; first_name: string; specialization: string;[key: string]: any }[]
   >([]);
@@ -142,6 +144,25 @@ export default function PatientFormScreen() {
     return `${dayLabel}, ${startTimeFormatted} – ${endTimeFormatted}`;
   };
 
+  const handleContinueToStep2 = async () => {
+    if (!selectedSpecialization || !selectedDoctor || !selectedSession) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("Incomplete", "Please select a specialization, doctor, and session.");
+      return;
+    }
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setStep(2);
+  };
+
+  const handleBack = () => {
+    if (step === 2) {
+      setStep(1);
+    } else {
+      router.back();
+      setUserRole(null);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       // Add haptic feedback at the start
@@ -208,6 +229,9 @@ export default function PatientFormScreen() {
     fetchAvailableSessions();
   }, []);
 
+  const isStep1Valid = selectedSpecialization && selectedDoctor && selectedSession;
+  const isStep2Valid = firstName && lastName && selectedGender && birthday && contactNumber;
+
   return (
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
@@ -218,7 +242,7 @@ export default function PatientFormScreen() {
           {/* Absolute Back Button (pinned top-left) */}
 
           <Pressable
-            onPress={() => { router.back(); setUserRole(null) }}
+            onPress={handleBack}
             className="w-16 h-16 rounded-2xl border border-slate-400 p-4 active:scale-95" // z-50 keeps it above other elements
           >
             <Ionicons
@@ -228,17 +252,21 @@ export default function PatientFormScreen() {
             />
           </Pressable>
           <Text className="text-2xl font-bold text-mediq-text-black ml-6">
-            Select Your Doctor
+            {step === 1 ? "Select Your Doctor" : "Personal Details"}
           </Text>
         </View>
 
-        <View className="items-center mb-8 mt-32">
-          <Image
-            source={MediQImages.doctor_avatar_standing}
-            className="w-56 h-56"
-            resizeMode="contain"
-          />
-        </View>
+
+        {/* Screen 1 Doctor and Session Selection */}
+        {step === 1 && (
+        <View className="flex-1 mb-4">
+          <View className="items-center mb-8 mt-32">
+            <Image
+              source={MediQImages.doctor_avatar_standing}
+              className="w-56 h-56"
+              resizeMode="contain"
+            />
+          </View>
         <ScrollView className=" px-6">
           {/* Specialization Section */}
           <View>
@@ -350,6 +378,63 @@ export default function PatientFormScreen() {
             </View>
           )}
 
+          {selectedDoctor && (
+            <View className="mt-6">
+              <Text className="text-lg font-medium text-mediq-text-black mb-3">
+                Available Time
+              </Text>
+              <Pressable
+                onPress={() => setShowSessions(!showSessions)}
+                className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex-row items-center justify-between active:bg-gray-100"
+              >
+                <Text className={`text-base ${selectedSession ? 'text-mediq-blue font-medium' : 'text-gray-400'}`}>
+                  {selectedSession ? formatSessionTime(selectedSession) : "Choose available time"}
+                </Text>
+                <Ionicons
+                  name={showSessions ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color="#6B7280"
+                />
+              </Pressable>
+              {showSessions && (
+                <View className="bg-white border border-gray-200 rounded-xl mt-2 max-h-48">
+                  <ScrollView showsVerticalScrollIndicator={true}>
+                    {getAvailableSessionsForDoctor().length > 0 ? (
+                      getAvailableSessionsForDoctor().map((session, index) => (
+                        <Pressable
+                          key={session.id}
+                          onPress={() => {
+                            setSelectedSession(session);
+                            setShowSessions(false);
+                          }}
+                          className={`p-4 ${index !== getAvailableSessionsForDoctor().length - 1 ? 'border-b border-gray-100' : ''} 
+                         ${selectedSession?.id === session.id ? 'bg-blue-50 rounded-xl' : ''} active:bg-gray-50`}
+                        >
+                          <Text className={`text-base ${selectedSession?.id === session.id ? 'text-blue-600 font-medium' : 'text-gray-700'}`}>
+                            {formatSessionTime(session)}
+                          </Text>
+                        </Pressable>
+                      ))
+                    ) : (
+                      <View className="p-4">
+                        <Text className="text-gray-500 text-center">
+                          No available sessions for this doctor
+                        </Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          )}
+          </ScrollView>
+          </View>
+        )}
+
+        {/* Screen 2 Personal Details Form */}
+        {step === 2 && (
+          <View className="flex-1">
+          <ScrollView className=" px-6 mt-32 mb-4">
           <View className="mt-6">
             <Text className="text-lg font-medium text-mediq-text-black mb-3">
               First Name
@@ -407,6 +492,7 @@ export default function PatientFormScreen() {
                 </Text>
               </Pressable>
             </View>
+            </View>
 
             <View className="mt-6">
               <Text className="text-lg font-medium text-mediq-text-black mb-3">
@@ -461,68 +547,34 @@ export default function PatientFormScreen() {
               </View>
             </View>
 
-            {selectedDoctor && (
-              <View className="mt-6">
-                <Text className="text-lg font-medium text-mediq-text-black mb-3">
-                  Available Time
-                </Text>
-                <Pressable
-                  onPress={() => setShowSessions(!showSessions)}
-                  className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex-row items-center justify-between active:bg-gray-100"
-                >
-                  <Text className={`text-base ${selectedSession ? 'text-mediq-blue font-medium' : 'text-gray-400'}`}>
-                    {selectedSession ? formatSessionTime(selectedSession) : "Choose available time"}
-                  </Text>
-                  <Ionicons
-                    name={showSessions ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color="#6B7280"
-                  />
-                </Pressable>
-
-                {showSessions && (
-                  <View className="bg-white border border-gray-200 rounded-xl mt-2 max-h-48">
-                    <ScrollView showsVerticalScrollIndicator={true}>
-                      {getAvailableSessionsForDoctor().length > 0 ? (
-                        getAvailableSessionsForDoctor().map((session, index) => (
-                          <Pressable
-                            key={session.id}
-                            onPress={() => {
-                              setSelectedSession(session);
-                              setShowSessions(false);
-                            }}
-                            className={`p-4 ${index !== getAvailableSessionsForDoctor().length - 1 ? 'border-b border-gray-100' : ''} 
-                           ${selectedSession?.id === session.id ? 'bg-blue-50 rounded-xl' : ''} active:bg-gray-50`}
-                          >
-                            <Text className={`text-base ${selectedSession?.id === session.id ? 'text-blue-600 font-medium' : 'text-gray-700'}`}>
-                              {formatSessionTime(session)}
-                            </Text>
-                          </Pressable>
-                        ))
-                      ) : (
-                        <View className="p-4">
-                          <Text className="text-gray-500 text-center">
-                            No available sessions for this doctor
-                          </Text>
-                        </View>
-                      )}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-            )}
-
-          </View>
         </ScrollView>
+        </View>
+        )}
+        
         <View className="px-6 pb-6 ">
-          <Pressable
-            onPress={handleSubmit}
-            className="h-16 rounded-2xl bg-mediq-blue p-4 flex-row items-center justify-center active:scale-95">
-            <Text className="text-xl text-white font-bold">
-              Continue
-            </Text>
-
-          </Pressable>
+          {step === 1 ? (
+            <Pressable
+              onPress={handleContinueToStep2}
+              disabled={!isStep1Valid}
+              className={`h-16 rounded-2xl p-4 flex-row items-center justify-center active:scale-95 ${isStep1Valid ? 'bg-mediq-blue' : 'bg-gray-300'
+                }`}
+            >
+              <Text className="text-xl text-white font-bold">
+                Continue
+              </Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={handleSubmit}
+              disabled={!isStep2Valid}
+              className={`h-16 rounded-2xl p-4 flex-row items-center justify-center active:scale-95 ${isStep2Valid ? 'bg-mediq-blue' : 'bg-gray-300'
+                }`}
+            >
+              <Text className="text-xl text-white font-bold">
+                Submit
+              </Text>
+            </Pressable>
+          )}
         </View>
 
       </SafeAreaView>
