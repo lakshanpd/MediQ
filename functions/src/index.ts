@@ -268,3 +268,83 @@ export const notifyDoctorBeforeSessionTimes = onSchedule(
     }
   }
 );
+
+// notify patients when session status changes
+export const notifyOnSessionStatusChange = onDocumentUpdated(
+  {
+    document: "sessions/{sessionId}",
+    region: "asia-south1",
+  },
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+
+    if (!before || !after) return;
+
+    // only react to session status change
+    if (before.status === after.status) return;
+
+    const sessionId = event.params.sessionId;
+    const newStatus = after.status;
+    const oldStatus = before.status;
+
+    // determine notification type
+    let title: string | null = null;
+    let body: string | null = null;
+    let type: string | null = null;
+
+    // pending -> active
+    if (oldStatus === "pending" && newStatus === "active") {
+      title = "Session Started 🟢";
+      body = "The session has started. Please be ready.";
+      type = "SESSION_STARTED";
+    }
+
+    // paused -> active
+    else if (oldStatus === "paused" && newStatus === "active") {
+      title = "Session Resumed ▶️";
+      body = "The session has resumed. Please be ready.";
+      type = "SESSION_RESUMED";
+    }
+
+    // active -> paused
+    else if (oldStatus === "active" && newStatus === "paused") {
+      title = "Session Paused ⏸️";
+      body = "The session is temporarily paused. Please wait.";
+      type = "SESSION_PAUSED";
+    }
+
+    // ignore all other transitions
+    if (!title || !body || !type) return;
+
+    // fetch all tokens in this session
+    const tokensSnap = await db
+      .collection("tokens")
+      .where("session_id", "==", sessionId)
+      .get();
+
+    if (tokensSnap.empty) return;
+
+    // notify all patients in the session
+    await Promise.all(
+      tokensSnap.docs.map((doc) => {
+        const tokenData = doc.data();
+        const deviceToken = tokenData?.device_token;
+
+        if (!deviceToken) return Promise.resolve();
+
+        return sendPush(
+          deviceToken,
+          title,
+          body,
+          {
+            sessionId,
+            tokenId: doc.id,
+            status: newStatus,
+            type,
+          }
+        );
+      })
+    );
+  }
+);
