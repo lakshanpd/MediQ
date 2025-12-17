@@ -42,7 +42,7 @@ export interface Session {
 
 export type UserRole = "patient" | "doctor";
 
-export type PatientStatus = "form" | "pending" | "accepted" | "rejected";
+export type PatientStatus = "form" | "pending" | "accepted" | "rejected" | "served";
 
 export type DoctorStatus =
   | "inactive"

@@ -7,6 +7,7 @@ import {
   StatusBar,
   Image,
   Pressable,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MediQImages } from "@/constants/theme";
@@ -16,6 +17,7 @@ import { useSessionListener } from "@/hooks/useSessionListener";
 import { useTokenListener } from "@/hooks/useTokenListener";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { useInProgressSessionListener } from "@/hooks/useInProgressSessionListener";
+import { router } from "expo-router";
 
 export default function PatientAcceptedScreen() {
   const { userState, setPatientStatus } = useUser();
@@ -23,6 +25,32 @@ export default function PatientAcceptedScreen() {
   const { sessionData } = useSessionListener(tokenData?.session_id ?? null);
   const { doctorData } = useDoctorListener(sessionData?.doctor_id ?? null);
   const { currentQueueNumber } = useInProgressSessionListener(sessionData?.id ?? null);
+
+
+  if (tokenData?.status === "served") {
+    setPatientStatus("served");
+    return  (
+    <View className="flex-1 items-center justify-center px-6 bg-white">
+      <Text className="text-2xl font-semibold text-gray-900 mb-3">
+        Visit Completed ✅
+      </Text>
+
+      <Text className="text-base text-gray-500 text-center mb-8">
+        You have been successfully served. Thank you for your visit.
+      </Text>
+
+      <TouchableOpacity
+        onPress={() => router.replace("/")}
+        className="bg-green-600 px-6 py-3 rounded-xl"
+        activeOpacity={0.85}
+      >
+        <Text className="text-white text-base font-semibold">
+          Go to Home
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+  }
 
   return (
     <View className="flex-1 bg-white">
@@ -132,9 +160,6 @@ export default function PatientAcceptedScreen() {
               ) : null}
             </View>
 
-          </View>
-          <View className="flex items-center justify-center mt-2">
-            <Text className="text-sm font-bold text-mediq-blue" onPress={() => setPatientStatus("pending")}>Cancel</Text>
           </View>
         </View>
       </SafeAreaView>
