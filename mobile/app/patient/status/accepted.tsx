@@ -124,6 +124,10 @@ export default function PatientAcceptedScreen() {
                 </Text>
               )}
             </View>
+
+          </View>
+          <View className="flex items-center justify-center mt-2">
+            <Text className="text-sm font-bold text-mediq-blue" onPress={() => setPatientStatus("pending")}>Cancel</Text>
           </View>
         </View>
       </SafeAreaView>
