@@ -119,6 +119,17 @@ export const notifyOnTokenStatusChange = onDocumentUpdated(
         }
       );
     }
+    else if (after.status === "served") {
+      await sendPush(
+        pushToken,
+        "Thank You",
+        "Thank you for your visit. Take care!",
+        {
+          tokenId: event.params.tokenId,
+          status: after.status,
+        }
+      );
+    }
   }
 );
 

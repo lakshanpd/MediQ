@@ -360,7 +360,7 @@ const handleSessionEnd = async () => {
               </View>
             ) : (
               <View className="items-center">
-                <Text className="text-base text-gray-500">No active token</Text>
+                <Text className="text-base text-gray-500">Something went wrong</Text>
               </View>
             )}
           </View>
