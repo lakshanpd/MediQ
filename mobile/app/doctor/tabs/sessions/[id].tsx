@@ -137,7 +137,7 @@ export default function SessionDetailsScreen() {
 
     const handleSessionStart = async () => {
         // add a new document to in_progress_sessions collection
-        if (pendingTokens.length === 0 || acceptedTokens.length === 0) {
+        if (pendingTokens.length === 0 && acceptedTokens.length === 0) {
             Alert.alert("Error", "No tokens available");
             return;
         }

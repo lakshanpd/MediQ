@@ -119,7 +119,6 @@ export default function QueueScreen() {
         return startMs >= Date.now();
     });
 
-
     const renderSessionCard = ({ item }: { item: any }) => {
         const startDate = getDateFromValue(item.start_time);
 
@@ -262,7 +261,7 @@ export default function QueueScreen() {
           {/* Sessions List */}
           <View className="flex-row">
             <FlatList
-              data={upcomingSortedSessions}
+              data={sortedSessions}
               keyExtractor={(item) => item.id}
               renderItem={renderSessionCard}
               contentContainerStyle={{
