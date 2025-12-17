@@ -1,11 +1,11 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { View, Text, StatusBar, Pressable, Alert, Image } from "react-native";
+import { View, Text, StatusBar, Pressable, Alert, Image, Button, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useDoctor } from "@/contexts/doctorContext";
 import { db } from "@/firebaseConfig";
-import { doc, updateDoc, serverTimestamp, getDocs, query, CollectionReference, collection, where } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, getDocs, query, CollectionReference, collection, where, deleteDoc } from "firebase/firestore";
 import { MediQImages } from "@/constants/theme";
 
 // parse Firestore timestamp or ISO/string
@@ -146,6 +146,48 @@ export default function CurrentSessionScreen() {
     }
   };
 
+const handleSessionEnd = async () => {
+  if (!session) return;
+
+  try {
+    const sessionId = session.id;
+
+    // 1️⃣ Delete tokens related to this session
+    const tokensQuery = query(
+      collection(db, "tokens"),
+      where("session_id", "==", sessionId)
+    );
+
+    const tokensSnap = await getDocs(tokensQuery);
+
+    await Promise.all(
+      tokensSnap.docs.map((d) => deleteDoc(d.ref))
+    );
+
+    // 2️⃣ Delete in_progress_session documents
+    const inProgressQuery = query(
+      collection(db, "in_progress_session"),
+      where("session_id", "==", sessionId)
+    );
+
+    const inProgressSnap = await getDocs(inProgressQuery);
+
+    await Promise.all(
+      inProgressSnap.docs.map((d) => deleteDoc(d.ref))
+    );
+
+    // 3️⃣ Delete the session itself
+    const sessionRef = doc(db, "sessions", sessionId);
+    await deleteDoc(sessionRef);
+
+    Alert.alert("Session ended");
+    router.replace("/doctor/tabs/sessions");
+  } catch (err) {
+    console.error("Error ending session:", err);
+    Alert.alert("Error", "Failed to end session");
+  }
+};
+
   // when currentToken changes, mark it in_progress
   useEffect(() => {
     if (currentToken && currentToken.status !== "in_progress") {
@@ -251,11 +293,14 @@ export default function CurrentSessionScreen() {
             <Text className="text-7xl font-bold align-baseline text-mediq-blue text-center">
               {currentToken?.queue_number}
             </Text>
-            <Text className="text-sm font-bold text-mediq-blue text-center">
-              Token Number
-            </Text>
+{currentToken ? (
+              <Text className="text-sm font-bold text-mediq-blue text-center">
+                Token Number
+              </Text>
+            ) : null}
 
             {currentToken ? (
+
               <View>
                 <View className="flex-row justify-between items-start mt-2">
                   <View className="flex-1 mr-2">
@@ -296,6 +341,22 @@ export default function CurrentSessionScreen() {
                     </Text>
                   </>
                 ) : null}
+              </View>
+            ) : servedCount  + absentCount == sessionTokens.length ? (
+              <View className="items-center justify-center mt-0 px-6">
+                <Text className="text-base text-gray-500 mb-4">
+                  No more tokens in the queue
+                </Text>
+
+                <TouchableOpacity
+                  onPress={handleSessionEnd}
+                  className="bg-red-600 px-6 py-3 rounded-xl shadow-sm"
+                  activeOpacity={0.85}
+                >
+                  <Text className="text-white text-base font-semibold">
+                    End Session
+                  </Text>
+                </TouchableOpacity>
               </View>
             ) : (
               <View className="items-center">
