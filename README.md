@@ -116,3 +116,6 @@ The app follows a **Serverless Architecture** to ensure low latency and real-tim
 5.  **Scan the QR code** with the Expo Go app on your phone.
 
 ---
+
+### 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
