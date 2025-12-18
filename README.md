@@ -117,5 +117,16 @@ The app follows a **Serverless Architecture** to ensure low latency and real-tim
 
 ---
 
+
+## 🏁 App Walkthrough
+<img width="1656" height="878" alt="Patinet Journey" src="https://github.com/user-attachments/assets/cc41b026-1c78-46ca-bcb9-4de9ce3aa1e4" />
+
+<img width="1775" height="891" alt="Doctor Journey" src="https://github.com/user-attachments/assets/fa35ce59-492f-4a05-9dd5-98f95563f194" />
+
+<img width="1691" height="924" alt="Realtime token management" src="https://github.com/user-attachments/assets/096b98df-de08-4280-b7b8-9f7b83c54c81" />
+
+<img width="1743" height="919" alt="Realtime queue management" src="https://github.com/user-attachments/assets/4d74cee4-b2d7-4442-b0b0-a2af9b18357b" />
+
+
 ### 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
